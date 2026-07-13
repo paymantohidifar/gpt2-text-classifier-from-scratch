@@ -39,29 +39,23 @@ run the same `python -m gpt2_classifier ...` commands as below.
 All commands are run as `python -m gpt2_classifier <subcommand> ...` (or
 `pixi run python -m gpt2_classifier ...` locally).
 
-- **`download-weights`** — fetch a pretrained GPT-2 checkpoint from HuggingFace.
-  ```bash
-  python -m gpt2_classifier download-weights --model-name "gpt2-small (124M)"
-  ```
+| Command | Description | Example |
+|---|---|---|
+| `download-weights` | Fetch a pretrained GPT-2 checkpoint from HuggingFace. | `python -m gpt2_classifier download-weights --model-name "gpt2-small (124M)"` |
+| `train` | Fine-tune a classifier on a built-in or custom dataset (see flags below). | `python -m gpt2_classifier train --dataset sms-spam --num-epochs 5` |
+| `predict` | Classify a piece of text with a fine-tuned checkpoint. | `python -m gpt2_classifier predict --checkpoint models/sms-spam_classifier.pt --text "..."` |
+| `generate` | Raw GPT-2 text generation (debug helper to sanity-check pretrained weights; not classification). | `python -m gpt2_classifier generate --prompt "Every effort moves"` |
 
-- **`train`** — fine-tune a classifier. Choose a dataset with `--dataset
-  {sms-spam,email-spam}`, or bring your own with `--data-url`/`--data-path`
-  plus `--text-column`/`--label-column`/`--label-map`. Add `--use-wandb` for
-  experiment tracking, or `--ddp` for multi-GPU training via `torchrun`.
-  ```bash
-  python -m gpt2_classifier train --dataset sms-spam --num-epochs 5
-  ```
+### `train` flags
 
-- **`predict`** — classify a piece of text with a fine-tuned checkpoint.
-  ```bash
-  python -m gpt2_classifier predict --checkpoint models/sms-spam_classifier.pt --text "..."
-  ```
-
-- **`generate`** — raw GPT-2 text generation (debug helper to sanity-check
-  that pretrained weights loaded correctly; not classification).
-  ```bash
-  python -m gpt2_classifier generate --prompt "Every effort moves"
-  ```
+| Flag | Description |
+|---|---|
+| `--dataset {sms-spam,email-spam}` | Use a built-in registered dataset (default `sms-spam`). |
+| `--data-url` / `--data-path` | Bring your own dataset from a remote URL or local file instead. |
+| `--text-column` / `--label-column` / `--label-map` | Required with `--data-url`/`--data-path` — describe the raw columns and label encoding, e.g. `--label-map "ham=0,spam=1"`. |
+| `--num-epochs` | Number of fine-tuning epochs (default `5`). |
+| `--use-wandb` | Enable Weights & Biases experiment tracking. |
+| `--ddp` | Multi-GPU training via `torchrun`. |
 
 ## Examples
 
