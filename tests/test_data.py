@@ -1,5 +1,4 @@
 import pandas as pd
-import pytest
 import tiktoken
 
 from gpt2_classifier.data import (

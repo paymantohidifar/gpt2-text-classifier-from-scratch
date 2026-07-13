@@ -9,8 +9,6 @@ def test_disabled_logger_is_safe_noop():
 
 
 def test_enabled_logger_degrades_to_disabled_on_init_failure(monkeypatch):
-    import gpt2_classifier.logging_utils as logging_utils_module
-
     class _FakeWandbModule:
         @staticmethod
         def init(**kwargs):
