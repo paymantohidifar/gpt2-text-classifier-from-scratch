@@ -46,7 +46,7 @@ uv run pytest
 # Optional: Preview the dependency resolution without installing packages
 uv sync --extra gpu --extra dev --dry-run
 
-# Create the virtual environment and install CPU + Dev packages
+# Create the virtual environment and install GPU + Dev packages
 uv sync --extra gpu --extra dev
 
 # Run the test suite to verify the installation
