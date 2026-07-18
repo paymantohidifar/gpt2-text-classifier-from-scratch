@@ -1,43 +1,125 @@
 # gpt2-classifier
 
-A from-scratch GPT-2 (book-style architecture) fine-tuned as a text
-classifier. It ships with SMS spam and email spam datasets out of the box,
-but the dataset pipeline is source-agnostic — point it at any two-column
-text/label CSV (local or remote) and it works without touching the code.
+From-scratch GPT-2 implementation fine-tuned for text classification.
+Features a decoupled, configuration-driven pipeline compatible with 
+any local or remote two-column dataset.
 
-## Setup
+## Setup & Installation
 
-### Local (pixi)
+### 1. Clone the Repository
 
-Requires [pixi](https://pixi.sh/) installed.
+Clone the repository to your local machine. This command checks out the `main`
+branch and places it into a clean `gpt2-classifier` directory:
 
 ```bash
-pixi install       # installs torch, pandas, tiktoken, safetensors, tqdm,
-                    # matplotlib, requests, wandb, pytest
-pixi run pytest    # verify the install (56 fast, CPU-only unit tests, no network)
+git clone https://github.com/paymantohidifar/gpt2-text-classifier-from-scratch.git --branch main gpt2-classifier
+cd gpt2-classifier
+
 ```
 
-No GPU is required — `torch` resolves to a CPU wheel on a machine without
-one. On a CUDA-enabled machine (e.g. Google Colab, below), the same code
-picks up the GPU automatically; no flags or code changes needed.
+This project supports automatic dependency resolution for both **CPU-only** and
+**CUDA-enabled** environments across three platforms: **Linux (64-bit)**,
+**Windows (64-bit)**, and **macOS (Apple Silicon/ARM64)**.
 
-### Google Colab
+### 2. Fast Local Installation via `uv`
+
+[uv](https://github.com/astral-sh/uv) is an ultra-fast Python package
+installer and resolver.
+
+**For a lightweight CPU-only environment:**
+
+```bash
+# Optional: Preview the dependency resolution without installing packages
+uv sync --extra cpu --extra dev --dry-run
+
+# Create the virtual environment and install CPU + Dev packages
+uv sync --extra cpu --extra dev
+
+# Run the test suite to verify the installation
+uv run pytest
+
+```
+
+**For a CUDA-enabled (GPU) environment:**
+
+```bash
+# Optional: Preview the dependency resolution without installing packages
+uv sync --extra gpu --extra dev --dry-run
+
+# Create the virtual environment and install CPU + Dev packages
+uv sync --extra gpu --extra dev
+
+# Run the test suite to verify the installation
+uv run pytest
+
+```
+
+### 3. Local Installation via `pixi` (Isolated Environments)
+
+If you use [Pixi](https://pixi.sh/) for system-level dependency encapsulation,
+your packages are managed completely automatically inside a local, hidden `.pixi/` directory.
+
+**For a CPU-only environment:**
+
+```bash
+# Optional: Preview the dependency resolution without installing packages
+pixi install --dry-run
+
+# Install the default environment profile (CPU + Dev tools)
+pixi install       
+
+# Run the test suite via the built-in Pixi task
+pixi run test
+
+```
+
+**For a CUDA-enabled (GPU) environment:**
+
+```bash
+# Optional: Preview the dependency resolution without installing packages
+pixi install --dry-run
+
+# Install the dedicated hardware-accelerated environment profile
+pixi install -e gpu-env
+
+# Run the test suite inside the GPU environment context
+pixi run test
+
+```
+
+### 4. Cloud Notebooks (Google Colab GPU)
+
+To train or evaluate this model using full hardware acceleration on Google Colab,
+you must prepare the runtime container first.
+
+> **Required Step:** In the top menu of your Colab notebook, navigate to
+**Runtime → Change runtime type**, select **T4 GPU** (or higher), and click **Save**.
+
+Paste and execute the following block in the very first cell of your notebook
+to clone the codebase and initialize the high-speed GPU environment:
 
 ```python
-!git clone https://github.com/paymantohidifar/gpt2-text-classifier-from-scratch.git --branch main gpt2_classifier
+# Clear any stale directories and clone a fresh copy of the codebase
+!rm -rf /content/gpt2-classifier
+!git clone https://github.com/paymantohidifar/gpt2-text-classifier-from-scratch.git --branch main gpt2-classifier
 %cd gpt2-classifier
-!pip install -e .
+
+# Bootstrap uv globally and pull GPU-enabled binaries directly into the system layer
+!curl -LsSf https://astral.sh/uv/install.sh | sh && \
+export PATH="$HOME/.local/bin:${PATH}" && \
+uv pip install -e .[gpu,dev] \
+        --system \
+        --break-system-packages \
+        --color never
+
 ```
 
-Then, in the Colab menu: **Runtime → Change runtime type → GPU**. All
-device selection in this project uses `torch.cuda.is_available()`, so
-training and inference automatically use the GPU once one is attached —
-run the same `python -m gpt2_classifier ...` commands as below.
+> **Important:** Once the cell finishes running, navigate to **Runtime → Restart session** in the top menu. This clears Colab's background Python cache so it can successfully read the newly installed packages.
 
 ## CLI usage
 
 All commands are run as `python -m gpt2_classifier <subcommand> ...` (or
-`pixi run python -m gpt2_classifier ...` locally).
+`uv run python -m gpt2_classifier ...` or `pixi run python -m gpt2_classifier ...` locally).
 
 | Command | Description | Example |
 |---|---|---|
