@@ -63,7 +63,7 @@ your packages are managed completely automatically inside a local, hidden `.pixi
 
 ```bash
 # Optional: Preview the dependency resolution without installing packages
-pixi install --dry-run
+pixi update
 
 # Install the default environment profile (CPU + Dev tools)
 pixi install       
@@ -77,7 +77,7 @@ pixi run test
 
 ```bash
 # Optional: Preview the dependency resolution without installing packages
-pixi install --dry-run
+pixi update
 
 # Install the dedicated hardware-accelerated environment profile
 pixi install -e gpu-env
