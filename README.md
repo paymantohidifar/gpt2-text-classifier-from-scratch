@@ -1,6 +1,6 @@
 # gpt2-classifier
 
-From-scratch GPT-2 implementation fine-tuned for text classification.
+From-scratch GPT-2 implementation fine-tuned for text classification. 
 Features a decoupled, configuration-driven pipeline compatible with 
 any local or remote two-column dataset.
 
