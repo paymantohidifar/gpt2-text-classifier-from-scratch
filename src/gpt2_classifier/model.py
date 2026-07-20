@@ -1,7 +1,6 @@
 """From-scratch GPT-2 architecture.
 
-Replaces the old ``gpt.py`` (same architecture, unchanged forward-pass
-logic) -- a standard pre-norm decoder-only transformer, built so that
+A standard pre-norm decoder-only transformer, built so that
 pretrained GPT-2 weights can be loaded into it via
 :mod:`gpt2_classifier.weights`.
 """
