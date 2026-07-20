@@ -1,9 +1,8 @@
 """Dataset download, preparation, and PyTorch DataLoader construction.
 
-Replaces the old ``dataset.py``. Every function here is driven by a
-:class:`gpt2_classifier.datasets_registry.DatasetSpec` rather than hardcoded
-SMS-spam-specific URLs/columns, so any two-column text/label dataset --
-registered (``sms-spam``, ``email-spam``) or ad-hoc (built at the CLI layer
+Every function here is driven by a :class:`gpt2_classifier.datasets_registry.DatasetSpec` 
+rather than hardcoded URLs/columns, so any two-column text/label dataset -- registered 
+(``sms-spam``, ``email-spam``) or ad-hoc (built at the CLI layer
 from ``--data-url``/``--data-path``) -- flows through the same pipeline.
 """
 
@@ -192,7 +191,7 @@ def prepare_dataset(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
 
 
 class TextClassificationDataset(Dataset):
-    """A tokenized, padded text-classification dataset (was ``SpamDataset``)."""
+    """A tokenized, padded text-classification dataset."""
 
     def __init__(
         self,
