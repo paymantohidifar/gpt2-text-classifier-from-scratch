@@ -8,8 +8,8 @@ any local or remote two-column dataset.
 
 ### 1. Clone the Repository
 
-Clone the repository to your local machine. This command checks out the `main`
-branch and places it into a clean `gpt2-classifier` directory:
+Clone the repository to your local machine (See below for deployment on Google Colab). 
+This command checks out the `main` branch and places it into a clean `gpt2-classifier` directory:
 
 ```bash
 git clone https://github.com/paymantohidifar/gpt2-text-classifier-from-scratch.git --branch main gpt2-classifier
@@ -18,8 +18,10 @@ cd gpt2-classifier
 ```
 
 This project supports automatic dependency resolution for both **CPU-only** and
-**CUDA-enabled** environments across three platforms: **Linux (64-bit)**,
-**Windows (64-bit)**, and **macOS (Apple Silicon/ARM64)**.
+**CUDA-enabled** environments on **Linux (64-bit)** and should also support
+**Windows (64-bit)** and **macOS (Apple Silicon/ARM64)**.
+
+> [!WARNING] This project is only tested and verified on Linux (64-bit).
 
 ### 2. Fast Local Installation via `uv`
 
@@ -143,6 +145,7 @@ All commands are run as `python -m gpt2_classifier <subcommand> ...` (or
 
 **Quickstart: SMS spam classifier end to end**
 
+
 ```bash
 python -m gpt2_classifier download-weights --model-name "gpt2-small (124M)"
 python -m gpt2_classifier train --model-name "gpt2-small (124M)" --dataset sms-spam --num-epochs 5
@@ -151,6 +154,9 @@ python -m gpt2_classifier predict --checkpoint models/sms-spam_classifier.pt \
 # -> spam
 ```
 
+*SMS-spam dataset source: https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip*
+
+
 **Using the built-in email spam dataset instead**
 
 ```bash
@@ -158,6 +164,8 @@ python -m gpt2_classifier train --model-name "gpt2-small (124M)" --dataset email
 python -m gpt2_classifier predict --checkpoint models/email-spam_classifier.pt --text "Hey, lunch tomorrow?"
 # -> ham
 ```
+*Email-spam dataset source: https://raw.githubusercontent.com/MWiechmann/enron_spam_data/master/enron_spam_data.csv"*
+
 
 **Bringing your own dataset**
 
@@ -174,7 +182,8 @@ python -m gpt2_classifier train \
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
 
-Portions of this software are derived from work by Sebastian Raschka, originally licensed under the Apache License, Version 2.0. A copy of the Apache License is included in [LICENSE-APACHE](LICENSE-APACHE).
+Portions of this software are derived or adapted from work by Sebastian Raschka, originally licensed under 
+the Apache License, Version 2.0. A copy of the Apache License is included in [LICENSE-APACHE](LICENSE-APACHE).
 
 ## Acknowledgments & Citations
 
