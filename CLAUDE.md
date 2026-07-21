@@ -41,5 +41,3 @@ python -m gpt2_classifier generate --prompt "..."   # raw LM generation, debug o
 ## Testing
 
 `tests/` has one file per module plus `conftest.py` (shared fixtures: `tiny_gpt_config`, `tiny_gpt_config_real_vocab` for tests that tokenize with the real `tiktoken` "gpt2" encoding, `tiny_gpt_model`, `synthetic_labeled_dataframe`). Tests use tiny configs and mock network calls — no real downloads or full training runs in the suite.
-
-See `docs/refactor-summary.md` for the full history of what was fixed and why.
