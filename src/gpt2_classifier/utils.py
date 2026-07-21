@@ -1,10 +1,4 @@
-"""Generic helpers: greedy text generation, tokenization glue, and plotting.
-
-Replaces the old grab-bag ``utils.py``. Weight loading (``assign``,
-``load_weights_into_gpt``, ``download_and_load_gpt2``) now lives in
-:mod:`gpt2_classifier.weights`; DDP setup now lives in
-:mod:`gpt2_classifier.train_ddp`.
-"""
+"""Generic helpers: greedy text generation, tokenization glue, and plotting."""
 
 from pathlib import Path
 
