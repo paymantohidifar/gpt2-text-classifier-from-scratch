@@ -120,7 +120,7 @@ def download_and_load_gpt2(url: str, destination: str | os.PathLike) -> dict[str
     if os.path.exists(destination):
         file_size_local = os.path.getsize(destination)
         if file_size == file_size_local:
-            print(f"File already exists and is up-to-date: {destination}")
+            print(f"The model already exists and is up-to-date: {destination}")
             return load_file(destination)
 
     block_size = 1024
