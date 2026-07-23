@@ -1,8 +1,12 @@
-# gpt2-classifier
+# GPT2 Text Classifier
 
-From-scratch GPT-2 implementation fine-tuned for text classification. 
-Features a decoupled, configuration-driven pipeline compatible with 
-any local or remote two-column dataset.
+A from-scratch GPT-2 architecture fine-tuned for sequence classification. 
+Designed around a decoupled, configuration-driven data pipeline, this platform 
+ingests any local or remote two-column dataset (`text, label`) without code modification.
+
+Inspired by Sebastian Raschka’s work, Build a Large Language Model (From Scratch), 
+this project is engineered to help students and practitioners master GPT-2 internals by 
+transitioning from foundational theory to a modular, production-ready ML platform.
 
 ## Setup & Installation
 
@@ -21,7 +25,7 @@ This project supports automatic dependency resolution for both **CPU-only** and
 **CUDA-enabled** environments on **Linux (64-bit)** and should also support
 **Windows (64-bit)** and **macOS (Apple Silicon/ARM64)**.
 
-> [!WARNING] This project is only tested and verified on Linux (64-bit).
+> [!WARNING] This application has been only tested and verified on Linux (64-bit).
 
 ### 2. Fast Local Installation via `uv`
 
@@ -89,16 +93,17 @@ pixi run test
 
 ```
 
-### 4. Cloud Notebooks (Google Colab GPU)
+### 4. Google Colab (CPU/GPU)
 
-To train or evaluate this model using full hardware acceleration on Google Colab,
+To finetune/train or evaluate this model using full hardware acceleration on Google Colab,
 you must prepare the runtime container first.
 
 > **Required Step:** In the top menu of your Colab notebook, navigate to
-**Runtime → Change runtime type**, select **T4 GPU** (or higher), and click **Save**.
+**Runtime → Change runtime type**, select **CPU** or **T4 GPU** (or higher), and click **Save**.
 
 Paste and execute the following block in the very first cell of your notebook
-to clone the codebase and initialize the high-speed GPU environment:
+to clone the codebase and initialize the CPU or high-speed GPU runtime session. Repo cloning 
+and installation process can also be executed directly on a Colab terminal session.
 
 ```python
 # Clear any stale directories and clone a fresh copy of the codebase
@@ -115,6 +120,9 @@ uv pip install -e .[gpu,dev] \
         --color never
 
 ```
+
+Replace `gpu` with `cpu` in the installation command (`uv pip install -e .[cpu,dev]`) 
+when setting up on a machine without NVIDIA CUDA support.
 
 > **Important:** Once the cell finishes running, navigate to **Runtime → Restart session** in the top menu. This clears Colab's background Python cache so it can successfully read the newly installed packages.
 
@@ -178,6 +186,67 @@ python -m gpt2_classifier train \
   --num-epochs 5
 ```
 
+## Real-Time Monitoring with Weights & Biases (WandB)
+
+You can track training metrics, loss curves, and hardware utilization in real time by 
+passing the `--use-wandb` flag during training.
+
+### Usage Example
+
+```bash
+python -m gpt2_classifier train \
+  --model-name "gpt2-small (124M)" \
+  --dataset sms-spam \
+  --num-epochs 5 \
+  --use-wandb
+
+```
+
+### Authentication Setup
+
+To use online logging:
+
+1. Create an account at [wandb.ai](https://www.google.com/search?q=https://wandb.ai/) 
+and generate an API key from your profile settings.
+2. By default, WandB will prompt you to enter your API key in the terminal on every run.
+
+To automate authentication without manual entry, store your API key in a `.env` file 
+and place it at the project root:
+
+```env
+WANDB_API_KEY="your_api_key_here"
+
+```
+
+The application will automatically detect and load this environment variable using `python-dotenv`, 
+enabling seamless authentication and real-time run tracking on your WandB dashboard.
+
+> **Security Note:** Ensure your `.env` file is added to `.gitignore` so your private API key 
+> is never committed to public version control.
+
+
+## Contributing
+
+This application is developed to guide practitioners and students through building, fine-tuning, and 
+scaling GPT-2-based LLMs in a structured, production-ready environment and it's under active development.
+
+Contributions from the community are warmly welcomed! Whether you are fixing bugs, optimizing model 
+training pipelines, or enhancing documentation, your efforts help make this resource better for everyone.
+
+### How to Contribute
+
+1. **Fork the Repository:** Create your own copy of the project to work on.
+2. **Create a Feature Branch:** Use semantic naming for your branch 
+(e.g., `git checkout -b feature/attention-optimization`).
+3. **Maintain Code Quality:** Ensure all code adheres to PEP 8 standards, includes 
+static type hints (`mypy`), and passes existing tests via `pytest`.
+4. **Submit a Pull Request:** Open a PR against the `dev` branch with a clear description 
+of your changes, the rationale behind them, and test coverage details.
+
+For major architectural changes or new feature proposals, please open an issue first to discuss your 
+proposed design before submitting a pull request.
+
+
 ## Licensing
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
@@ -187,9 +256,11 @@ the Apache License, Version 2.0. A copy of the Apache License is included in [LI
 
 ## Acknowledgments & Citations
 
-This repository builds upon the implementations and concepts from the book **Build A Large Language Model (From Scratch)** by Sebastian Raschka. 
+This repository builds upon the implementations and concepts from the book 
+**Build A Large Language Model (From Scratch)** by Sebastian Raschka. 
 
-If you use this software or derivations of it in your research or project, please cite the original work using the following formats:
+If you use this software or derivations of it in your research or project, 
+please cite the original work using the following formats:
 
 ### APA Style
 Raschka, S. (2024). *Build a Large Language Model (from scratch)*. Manning Publications. https://www.manning.com/books/build-a-large-language-model-from-scratch
