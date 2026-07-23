@@ -23,6 +23,7 @@ dependencies = [
     "matplotlib>=3.8",
     "requests>=2.28",
     "wandb>=0.17",
+    "python-dotenv>=1.2.2",
 ]
 
 # Mutually Exclusive Hardware Accel Groups and Dev Utilities
