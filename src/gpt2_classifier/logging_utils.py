@@ -6,6 +6,7 @@ opt-in, and any failure to actually start a run just disables logging with a
 printed warning.
 """
 
+from dotenv import load_dotenv
 from typing import Any
 
 
@@ -35,6 +36,8 @@ class RunLogger:
             try:
                 import wandb
 
+                load_dotenv()
+                wandb.login()
                 self._wandb = wandb
                 self._run = wandb.init(project=project, config=config)
             except Exception as exc:
