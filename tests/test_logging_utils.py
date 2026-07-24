@@ -1,3 +1,4 @@
+import sys
 from gpt2_classifier.logging_utils import RunLogger
 
 
@@ -25,9 +26,28 @@ def test_enabled_logger_degrades_to_disabled_on_init_failure(monkeypatch):
 
 
 def test_enabled_logger_calls_wandb_log_and_finish(monkeypatch):
-    calls = {"log": [], "finished": False}
+
+    calls = {
+        "load_dotenv_called": False,
+        "login_called": False,
+        "log": [], 
+        "finished": False
+    }
+
+    def fake_load_dotenv(*args, **kwargs):
+        calls["load_dotenv_called"] = True
+        return True
+
+    import gpt2_classifier.logging_utils as logger_module
+   
+    monkeypatch.setattr(logger_module, "load_dotenv", fake_load_dotenv)
 
     class _FakeWandbModule:
+        @staticmethod
+        def login(**kwargs):
+            calls["login_called"] = True
+            return True
+
         @staticmethod
         def init(**kwargs):
             return object()
@@ -40,13 +60,21 @@ def test_enabled_logger_calls_wandb_log_and_finish(monkeypatch):
         def finish():
             calls["finished"] = True
 
-    monkeypatch.setitem(__import__("sys").modules, "wandb", _FakeWandbModule())
+    monkeypatch.setitem(sys.modules, "wandb", _FakeWandbModule())
 
-    logger = RunLogger(enabled=True)
+    logger = logger_module.RunLogger(enabled=True)
     assert logger.enabled is True
 
     logger.log({"loss": 0.5}, step=3)
     logger.finish()
 
-    assert calls["log"] == [({"loss": 0.5}, 3)]
-    assert calls["finished"] is True
+    assert (
+        calls["load_dotenv_called"] is True
+    ), "load_dotenv was not called during RunLogger init"
+    assert (
+        calls["login_called"] is True
+    ), "wandb.login was not called during RunLogger init"
+    assert calls["log"] == [
+        ({"loss": 0.5}, 3)
+    ], "Logged metrics or steps do not match"
+    assert calls["finished"] is True, "wandb.finish was not triggered"
