@@ -118,6 +118,32 @@ def _prepare_for_classification_finetuning(
         param.requires_grad = True
 
 
+def get_adam_param_groups(model: GPTModel, weight_decay: float = 0.1):
+    """
+    Filters trainable parameters and splits them into weight-decay 
+    and no-weight-decay groups (excluding 1D tensors like biases/LayerNorm).
+    """
+    decay_params = []
+    no_decay_params = []
+
+    for name, param in model.named_parameters():
+        # Skip non-trainable parameters completely
+        if not param.requires_grad:
+            continue
+
+        # Separate 1D parameters (biases, norms) from 2D+ weight matrices
+        if param.ndim >= 2:
+            decay_params.append(param)
+        else:
+            no_decay_params.append(param)
+
+    optim_groups = [
+        {"params": decay_params, "weight_decay": weight_decay},
+        {"params": no_decay_params, "weight_decay": 0.0},
+    ]
+    return optim_groups
+
+
 def finetune_model(
     train_loader: torch.utils.data.DataLoader,
     val_loader: torch.utils.data.DataLoader,
@@ -126,6 +152,7 @@ def finetune_model(
     num_classes: int = 2,
     lr: float = 5e-5,
     weight_decay: float = 0.1,
+    optimize_adamw: bool = True,
     num_epochs: int = 5,
     eval_freq: int = 50,
     eval_iter: int = 5,
@@ -147,6 +174,7 @@ def finetune_model(
         num_classes: Number of output classes.
         lr: Learning rate for AdamW.
         weight_decay: Weight decay for AdamW.
+        optimize_adamw: Exclude weight decay from 1D tensors
         num_epochs: Number of epochs to train for.
         eval_freq: Evaluate loss every this many training steps.
         eval_iter: Number of batches to sample per evaluation.
@@ -175,9 +203,14 @@ def finetune_model(
     _prepare_for_classification_finetuning(model, model_config, num_classes, device)
 
     torch.manual_seed(123)
-    optimizer = torch.optim.AdamW(
-        (p for p in model.parameters() if p.requires_grad), lr=lr, weight_decay=weight_decay
-    )
+    if optimize_adamw:
+        optim_groups = get_adam_param_groups(model, weight_decay=weight_decay)
+        optimizer = torch.optim.AdamW(optim_groups, lr=lr)
+        print("Excluded weight decay on 1D tensors (e.g. LayerNorm/biases) in the optimizer")
+    else:
+        optimizer = torch.optim.AdamW(
+            (p for p in model.parameters() if p.requires_grad), lr=lr, weight_decay=weight_decay
+        )
 
     start_time = time.time()
     if use_ddp:
