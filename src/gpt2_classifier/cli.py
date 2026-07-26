@@ -151,6 +151,7 @@ def _run_train(args: argparse.Namespace) -> None:
         num_classes=len(spec.label_map),
         lr=args.lr,
         weight_decay=args.weight_decay,
+        optimize_adamw=args.optimize_adamw,
         num_epochs=args.num_epochs,
         eval_freq=args.eval_freq,
         eval_iter=args.eval_iter,
@@ -206,6 +207,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--batch-size", type=int, default=8)
     train_parser.add_argument("--lr", type=float, default=5e-5)
     train_parser.add_argument("--weight-decay", type=float, default=0.1)
+    train_parser.add_argument("--optimize-adamw", action="store_true")
     train_parser.add_argument("--eval-freq", type=int, default=50)
     train_parser.add_argument("--eval-iter", type=int, default=5)
     train_parser.add_argument("--use-wandb", action="store_true")
