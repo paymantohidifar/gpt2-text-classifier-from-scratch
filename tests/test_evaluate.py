@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from gpt2_classifier.evaluate import (
     calc_accuracy_loader,
+    calc_classification_metrics_loader,
     calc_loss_batch,
     calc_loss_loader,
     evaluate_model,
@@ -60,6 +61,32 @@ def test_calc_accuracy_loader_in_valid_range(tiny_gpt_config, tiny_gpt_model):
     accuracy = calc_accuracy_loader(loader, model, torch.device("cpu"))
 
     assert 0.0 <= accuracy <= 1.0
+
+
+def test_calc_classification_metrics_loader_returns_all_fields(tiny_gpt_config, tiny_gpt_model):
+    model = _classifier_model(tiny_gpt_model)
+    loader = _tiny_loader(tiny_gpt_config)
+
+    metrics = calc_classification_metrics_loader(loader, model, torch.device("cpu"))
+
+    assert 0.0 <= metrics.accuracy <= 1.0
+    assert 0.0 <= metrics.precision <= 1.0
+    # roc_auc/pr_auc may be NaN if the small random loader has only one
+    # class present in the evaluated targets; otherwise must be in [0, 1].
+    assert metrics.roc_auc != metrics.roc_auc or 0.0 <= metrics.roc_auc <= 1.0
+    assert metrics.pr_auc != metrics.pr_auc or 0.0 <= metrics.pr_auc <= 1.0
+
+
+def test_calc_classification_metrics_loader_single_class_returns_nan_auc(tiny_gpt_config, tiny_gpt_model):
+    model = _classifier_model(tiny_gpt_model)
+    inputs = torch.randint(0, tiny_gpt_config["vocab_size"], (6, 4))
+    labels = torch.zeros(6, dtype=torch.long)
+    loader = DataLoader(TensorDataset(inputs, labels), batch_size=2)
+
+    metrics = calc_classification_metrics_loader(loader, model, torch.device("cpu"))
+
+    assert metrics.roc_auc != metrics.roc_auc  # NaN
+    assert metrics.pr_auc != metrics.pr_auc  # NaN
 
 
 def test_evaluate_model_returns_train_and_val_loss(tiny_gpt_config, tiny_gpt_model):

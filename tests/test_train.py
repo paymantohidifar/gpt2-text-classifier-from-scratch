@@ -39,7 +39,19 @@ def test_finetune_model_runs_and_saves_checkpoint(tiny_gpt_config, tmp_path):
     val_loader = _tiny_loader(tiny_gpt_config["vocab_size"])
     checkpoint_path = tmp_path / "classifier.pt"
 
-    train_losses, val_losses, train_accs, val_accs, examples_seen = finetune_model(
+    (
+        train_losses,
+        val_losses,
+        train_accs,
+        val_accs,
+        train_precisions,
+        val_precisions,
+        train_roc_aucs,
+        val_roc_aucs,
+        train_pr_aucs,
+        val_pr_aucs,
+        examples_seen,
+    ) = finetune_model(
         train_loader,
         val_loader,
         model,
@@ -54,6 +66,12 @@ def test_finetune_model_runs_and_saves_checkpoint(tiny_gpt_config, tmp_path):
 
     assert len(train_accs) == 1
     assert len(val_accs) == 1
+    assert len(train_precisions) == 1
+    assert len(val_precisions) == 1
+    assert len(train_roc_aucs) == 1
+    assert len(val_roc_aucs) == 1
+    assert len(train_pr_aucs) == 1
+    assert len(val_pr_aucs) == 1
     assert len(train_losses) == len(val_losses)
     assert examples_seen > 0
     assert checkpoint_path.exists()

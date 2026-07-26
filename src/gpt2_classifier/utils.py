@@ -158,10 +158,16 @@ def plot_results(
     val_losses: list[float],
     train_accs: list[float],
     val_accs: list[float],
+    train_precisions: list[float],
+    val_precisions: list[float],
+    train_roc_aucs: list[float],
+    val_roc_aucs: list[float],
+    train_pr_aucs: list[float],
+    val_pr_aucs: list[float],
     examples_seen: int,
     output_dir: Path = paths.MODELS_DIR / "metric-plots",
 ) -> None:
-    """Plot both loss and accuracy curves for a fine-tuning run.
+    """Plot loss, accuracy, precision, ROC-AUC, and PR-AUC curves for a run.
 
     Args:
         num_epochs: Total number of epochs trained.
@@ -169,10 +175,16 @@ def plot_results(
         val_losses: Validation loss values recorded during training.
         train_accs: Training accuracy values recorded per epoch.
         val_accs: Validation accuracy values recorded per epoch.
+        train_precisions: Training precision values recorded per epoch.
+        val_precisions: Validation precision values recorded per epoch.
+        train_roc_aucs: Training ROC-AUC values recorded per epoch.
+        val_roc_aucs: Validation ROC-AUC values recorded per epoch.
+        train_pr_aucs: Training PR-AUC values recorded per epoch.
+        val_pr_aucs: Validation PR-AUC values recorded per epoch.
         examples_seen: Total number of training examples seen.
         output_dir: Directory to save the resulting PDFs into.
     """
-        
+
     epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
     examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
     plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses, output_dir=output_dir)
@@ -181,4 +193,28 @@ def plot_results(
     examples_seen_tensor = torch.linspace(0, examples_seen, len(train_accs))
     plot_values(
         epochs_tensor, examples_seen_tensor, train_accs, val_accs, label="accuracy", output_dir=output_dir
+    )
+    plot_values(
+        epochs_tensor,
+        examples_seen_tensor,
+        train_precisions,
+        val_precisions,
+        label="precision",
+        output_dir=output_dir,
+    )
+    plot_values(
+        epochs_tensor,
+        examples_seen_tensor,
+        train_roc_aucs,
+        val_roc_aucs,
+        label="roc_auc",
+        output_dir=output_dir,
+    )
+    plot_values(
+        epochs_tensor,
+        examples_seen_tensor,
+        train_pr_aucs,
+        val_pr_aucs,
+        label="pr_auc",
+        output_dir=output_dir,
     )
