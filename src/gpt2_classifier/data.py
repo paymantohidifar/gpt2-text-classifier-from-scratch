@@ -209,7 +209,7 @@ def prepare_dataset(
         balanced_df = create_balanced_dataset(df)
         train_df, validation_df, test_df = random_split(balanced_df, train_frac, validation_frac)
     else:
-        train_df, validation_df, test_df = random_split(balanced_df, train_frac, validation_frac)
+        train_df, validation_df, test_df = random_split(df, train_frac, validation_frac)
 
     output_dir = data_dir / spec.name
     output_dir.mkdir(parents=True, exist_ok=True)
