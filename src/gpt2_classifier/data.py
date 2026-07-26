@@ -136,23 +136,17 @@ def random_split(
     Returns:
         A ``(train_df, validation_df, test_df)`` tuple.
     """
-    # df = df.sample(frac=1, random_state=123).reset_index(drop=True)
 
-    # train_end = int(len(df) * train_frac)
-    # validation_end = train_end + int(len(df) * validation_frac)
-
-    # train_df = df[:train_end]
-    # validation_df = df[train_end:validation_end]
-    # test_df = df[validation_end:]
-
-    test_frac = 1 - train_frac - validation_frac
+    # Split original df into train+valid set and test set
+    test_size = int(len(df) * (1.0 - train_frac - validation_frac))
     train_valid_df, test_df = train_test_split(
-        df, test_size=test_frac, stratify=df[_NORMALIZED_LABEL_COLUMN], random_state=123
+        df, test_size=test_size, stratify=df[_NORMALIZED_LABEL_COLUMN], random_state=123
         )
 
-    valid_train_frac = validation_frac / (train_frac + validation_frac)
+    # Split train+valid set into train set and valid set
+    valid_size = int(len(train_valid_df) * validation_frac / (train_frac + validation_frac))
     train_df, validation_df = train_test_split(
-        train_valid_df, test_size=valid_train_frac, stratify=train_valid_df[_NORMALIZED_LABEL_COLUMN], random_state=123
+        train_valid_df, test_size=valid_size, stratify=train_valid_df[_NORMALIZED_LABEL_COLUMN], random_state=123
         )
 
     return train_df, validation_df, test_df
@@ -178,7 +172,7 @@ def prepare_dataset(
         balance_labels: Balance datsets based on ``_NORMALIZED_LABEL_COLUMN``
             column
         dataset_split: List of floats carrying fractions for train and validation
-            fractions.
+            datasets.
 
     Returns:
         The dataset's output directory (``data_dir / spec.name``).
