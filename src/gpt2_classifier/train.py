@@ -206,7 +206,7 @@ def finetune_model(
     if optimize_adamw:
         optim_groups = get_adam_param_groups(model, weight_decay=weight_decay)
         optimizer = torch.optim.AdamW(optim_groups, lr=lr)
-        print("Excluded weight decay on 1D tensors (e.g. LayerNorm/biases) in the optimizer")
+        print("Excluded weight decay effect on 1D tensors (e.g. LayerNorm/biases) in AdamW optimizer.")
     else:
         optimizer = torch.optim.AdamW(
             (p for p in model.parameters() if p.requires_grad), lr=lr, weight_decay=weight_decay
