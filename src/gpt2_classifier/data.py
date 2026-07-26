@@ -150,7 +150,7 @@ def random_split(
         df, test_size=test_frac, stratify=df[_NORMALIZED_LABEL_COLUMN], random_state=123
         )
 
-    valid_train_frac = validation_frac/train_frac
+    valid_train_frac = validation_frac / (train_frac + validation_frac)
     train_df, validation_df = train_test_split(
         train_valid_df, test_size=valid_train_frac, stratify=train_valid_df[_NORMALIZED_LABEL_COLUMN], random_state=123
         )
