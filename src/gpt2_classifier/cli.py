@@ -131,7 +131,8 @@ def _run_train(args: argparse.Namespace) -> None:
     model = GPTModel(model_config)
     load_weights_into_gpt(model, state_dict)
 
-    prepare_dataset(spec, data_dir=paths.DATA_DIR)
+    prepare_dataset(
+        spec, data_dir=paths.DATA_DIR, balance_labels=args.balance_labels, dataset_split=args.dataset_split)
     train_loader, val_loader, _test_loader = create_data_loaders(
         dataset_name=spec.name,
         data_dir=paths.DATA_DIR,
@@ -203,6 +204,8 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--text-column", default=None)
     train_parser.add_argument("--label-column", default=None)
     train_parser.add_argument("--label-map", default=None, help="e.g. 'ham=0,spam=1'")
+    train_parser.add_argument("--balance-labels", action="store_true", default=True, help="Balance labels")
+    train_parser.add_argument('--dataset-split', nargs='+', help='Fraction of train/validation sets sep. by space (e.g. 0.7 0.1)')
     train_parser.add_argument("--num-epochs", type=int, default=5)
     train_parser.add_argument("--batch-size", type=int, default=8)
     train_parser.add_argument("--lr", type=float, default=5e-5)

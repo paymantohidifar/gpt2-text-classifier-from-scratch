@@ -16,6 +16,7 @@ import tiktoken
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
+from sklearn.model_selection import train_test_split
 
 from gpt2_classifier import paths
 from gpt2_classifier.datasets_registry import DatasetSpec
@@ -135,19 +136,36 @@ def random_split(
     Returns:
         A ``(train_df, validation_df, test_df)`` tuple.
     """
-    df = df.sample(frac=1, random_state=123).reset_index(drop=True)
+    # df = df.sample(frac=1, random_state=123).reset_index(drop=True)
 
-    train_end = int(len(df) * train_frac)
-    validation_end = train_end + int(len(df) * validation_frac)
+    # train_end = int(len(df) * train_frac)
+    # validation_end = train_end + int(len(df) * validation_frac)
 
-    train_df = df[:train_end]
-    validation_df = df[train_end:validation_end]
-    test_df = df[validation_end:]
+    # train_df = df[:train_end]
+    # validation_df = df[train_end:validation_end]
+    # test_df = df[validation_end:]
+
+    test_frac = 1 - train_frac - validation_frac
+    train_valid_df, test_df = train_test_split(
+        df, test_size=test_frac, stratify=df[_NORMALIZED_LABEL_COLUMN], random_state=123
+        )
+
+    valid_train_frac = validation_frac/train_frac
+    train_df, validation_df = train_test_split(
+        train_valid_df, test_size=valid_train_frac, stratify=train_valid_df[_NORMALIZED_LABEL_COLUMN], random_state=123
+        )
 
     return train_df, validation_df, test_df
 
 
-def prepare_dataset(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
+def prepare_dataset(
+        spec: DatasetSpec,
+        data_dir: Path = paths.DATA_DIR,
+        balance_labels: bool = True,
+        dataset_split: list[float] | None = None,
+        train_frac: float = 0.7,
+        validation_frac: float = 0.1,
+        ) -> Path:
     """Download, normalize, balance, split, and persist a dataset as CSVs.
 
     Writes ``train.csv``/``validation.csv``/``test.csv`` under
@@ -179,8 +197,17 @@ def prepare_dataset(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
     df = df.dropna(subset=[_NORMALIZED_TEXT_COLUMN, _NORMALIZED_LABEL_COLUMN])
     df[_NORMALIZED_LABEL_COLUMN] = df[_NORMALIZED_LABEL_COLUMN].map(spec.label_map)
 
-    balanced_df = create_balanced_dataset(df)
-    train_df, validation_df, test_df = random_split(balanced_df, 0.7, 0.1)
+    if dataset_split is None:
+        train_frac = 0.7
+        validation_frac = 0.1
+    else:
+        train_frac, validation_frac = dataset_split
+
+    if balance_labels:
+        balanced_df = create_balanced_dataset(df)
+        train_df, validation_df, test_df = random_split(balanced_df, train_frac, validation_frac)
+    else:
+        train_df, validation_df, test_df = random_split(balanced_df, train_frac, validation_frac)
 
     output_dir = data_dir / spec.name
     output_dir.mkdir(parents=True, exist_ok=True)
