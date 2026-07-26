@@ -112,12 +112,27 @@ def create_balanced_dataset(df: pd.DataFrame, label_column: str = _NORMALIZED_LA
     Returns:
         A new, class-balanced DataFrame.
     """
-    minority_count = df[label_column].value_counts().min()
-    balanced_frames = [
-        group.sample(minority_count, random_state=123)
-        for _, group in df.groupby(label_column)
-    ]
-    return pd.concat(balanced_frames).reset_index(drop=True)
+    # minority_count = df[label_column].value_counts().min()
+    # balanced_frames = [
+    #     group.sample(minority_count, random_state=123)
+    #     for _, group in df.groupby(label_column)
+    # ]
+
+    # return pd.concat(balanced_frames).reset_index(drop=True)
+
+    # ----- testing ------
+    # Count the instances of "spam"
+    num_spam = df[df["Label"] == "spam"].shape[0]
+
+    # Randomly sample "ham" instances to match the number of "spam" instances
+    ham_subset = df[df["Label"] == "ham"].sample(num_spam, random_state=123)
+
+    # Combine ham "subset" with "spam"
+    balanced_df = pd.concat([ham_subset, df[df["Label"] == "spam"]])
+
+    return balanced_df
+
+    # -----------------------   
 
 
 def random_split(
