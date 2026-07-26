@@ -122,13 +122,13 @@ def create_balanced_dataset(df: pd.DataFrame, label_column: str = _NORMALIZED_LA
 
     # ----- testing ------
     # Count the instances of "spam"
-    num_spam = df[df[label_column] == "spam"].shape[0]
+    num_spam = df[df[label_column] == 1].shape[0]
 
     # Randomly sample "ham" instances to match the number of "spam" instances
-    ham_subset = df[df[label_column] == "ham"].sample(num_spam, random_state=123)
+    ham_subset = df[df[label_column] == 0].sample(num_spam, random_state=123)
 
     # Combine ham "subset" with "spam"
-    balanced_df = pd.concat([ham_subset, df[df[label_column] == "spam"]])
+    balanced_df = pd.concat([ham_subset, df[df[label_column] == 1]])
 
     return balanced_df
 
