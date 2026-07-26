@@ -19,7 +19,7 @@ from gpt2_classifier.inference import run_prediction
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
 from gpt2_classifier.train import finetune_model
-from gpt2_classifier.utils import generate_response, plot_results
+from gpt2_classifier.utils import generate_response
 from gpt2_classifier.weights import download_and_load_gpt2, load_weights_into_gpt
 
 
