@@ -133,6 +133,8 @@ when setting up on a machine without NVIDIA CUDA support.
 All commands are run as `python -m gpt2_classifier <subcommand> ...` (or
 `uv run python -m gpt2_classifier ...` or `pixi run python -m gpt2_classifier ...` locally).
 
+Below are key CLI commands and flags. To view detailed option descriptions and default parameters for any specific subcommand, pass the --help flag:
+
 | Command | Description | Example |
 |---|---|---|
 | `download-weights` | Fetch a pretrained GPT-2 checkpoint from HuggingFace. | `python -m gpt2_classifier download-weights --model-name "gpt2-small (124M)"` |
