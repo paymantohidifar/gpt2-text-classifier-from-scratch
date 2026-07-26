@@ -26,6 +26,7 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "jupyterlab>=4.6.2",
     "ipykernel>=7.3.0",
+    "scikit-learn>=1.9.0",
 ]
 
 # Mutually Exclusive Hardware Accel Groups and Dev Utilities
