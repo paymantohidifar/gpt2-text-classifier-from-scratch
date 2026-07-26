@@ -10,6 +10,17 @@ from gpt2_classifier import paths
 from gpt2_classifier.model import GPTModel
 
 
+def get_device() -> torch.device:
+    """Return the CUDA device if available, otherwise CPU.
+
+    Returns:
+        A ``torch.device``. Code that calls this never hardcodes "cuda" or
+        "cpu" directly, so the same code works unchanged on a CPU-only
+        development machine and on a CUDA-enabled machine (e.g. Colab).
+    """
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def generate_text_simple(
     model: GPTModel, idx: torch.Tensor, max_new_tokens: int, context_size: int
 ) -> torch.Tensor:

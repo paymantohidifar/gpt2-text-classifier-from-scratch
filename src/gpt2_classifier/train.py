@@ -17,20 +17,9 @@ from gpt2_classifier import paths
 from gpt2_classifier.evaluate import calc_accuracy_loader, calc_loss_batch, evaluate_model
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
-from gpt2_classifier.utils import plot_results
+from gpt2_classifier.utils import plot_results, get_device
 
 TrainingHistory = tuple[list[float], list[float], list[float], list[float], int]
-
-
-def get_device() -> torch.device:
-    """Return the CUDA device if available, otherwise CPU.
-
-    Returns:
-        A ``torch.device``. Code that calls this never hardcodes "cuda" or
-        "cpu" directly, so the same code works unchanged on a CPU-only
-        development machine and on a CUDA-enabled machine (e.g. Colab).
-    """
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def train_classifier_simple(
@@ -205,6 +194,7 @@ def finetune_model(
     print(f"Training completed in {execution_time_minutes:.2f} minutes.")
 
     if plot_metrics:
+        #FIXME pass two arguments history is fixed
         history = (num_epochs,) + history
         plot_results(*history)
 
