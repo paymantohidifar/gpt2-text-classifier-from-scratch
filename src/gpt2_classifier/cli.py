@@ -19,7 +19,7 @@ from gpt2_classifier.inference import run_prediction
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
 from gpt2_classifier.train import finetune_model
-from gpt2_classifier.utils import generate_response
+from gpt2_classifier.utils import generate_response, plot_results
 from gpt2_classifier.weights import download_and_load_gpt2, load_weights_into_gpt
 
 
@@ -156,6 +156,7 @@ def _run_train(args: argparse.Namespace) -> None:
         eval_iter=args.eval_iter,
         use_ddp=args.ddp,
         logger=logger,
+        plot_metrics=args.plot_metrics,
         checkpoint_path=checkpoint_path,
         label_names=label_names,
     )
@@ -208,6 +209,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--eval-freq", type=int, default=50)
     train_parser.add_argument("--eval-iter", type=int, default=5)
     train_parser.add_argument("--use-wandb", action="store_true")
+    train_parser.add_argument("--plot-metrics", action="store_true")
     train_parser.add_argument("--ddp", action="store_true", help="Use multi-GPU DDP training (requires torchrun)")
     train_parser.add_argument("--checkpoint-path", type=Path, default=None)
     train_parser.set_defaults(func=_run_train)
