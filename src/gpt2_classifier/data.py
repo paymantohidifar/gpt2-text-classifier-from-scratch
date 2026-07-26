@@ -163,8 +163,6 @@ def prepare_dataset(
         data_dir: Path = paths.DATA_DIR,
         balance_labels: bool = True,
         dataset_split: list[float] | None = None,
-        train_frac: float = 0.7,
-        validation_frac: float = 0.1,
         ) -> Path:
     """Download, normalize, balance, split, and persist a dataset as CSVs.
 
@@ -177,6 +175,10 @@ def prepare_dataset(
         spec: Dataset source description.
         data_dir: Root directory under which per-dataset subdirectories are
             created and CSVs are written.
+        balance_labels: Balance datsets based on ``_NORMALIZED_LABEL_COLUMN``
+            column
+        dataset_split: List of floats carrying fractions for train and validation
+            fractions.
 
     Returns:
         The dataset's output directory (``data_dir / spec.name``).
