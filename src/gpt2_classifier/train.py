@@ -228,8 +228,8 @@ def finetune_model(
 
     if plot_metrics:
         #FIXME pass two arguments history is fixed
-        history = (num_epochs,) + history
-        plot_results(*history)
+        # history = (num_epochs,) + history
+        plot_results(num_epochs, *history)
 
     if checkpoint_path is not None:
         checkpoint_path = Path(checkpoint_path)
