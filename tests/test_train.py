@@ -2,7 +2,8 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from gpt2_classifier.model import GPTModel
-from gpt2_classifier.train import _prepare_for_classification_finetuning, finetune_model, get_device
+from gpt2_classifier.train import _prepare_for_classification_finetuning, finetune_model
+from gpt2_classifier.utils import get_device
 
 
 def _tiny_loader(vocab_size, num_examples=6, seq_len=4, batch_size=2):
