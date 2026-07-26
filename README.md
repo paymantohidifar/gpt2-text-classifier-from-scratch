@@ -1,12 +1,15 @@
-# GPT2 Text Classifier
+# GPT-2 Text Classifier
 
-A from-scratch GPT-2 architecture fine-tuned for sequence classification. 
+A from-scratch GPT-2 architecture fine-tuned for text classification. 
 Designed around a decoupled, configuration-driven data pipeline, this platform 
 ingests any local or remote two-column dataset (`text, label`) without code modification.
 
-Inspired by Sebastian Raschka’s work, Build a Large Language Model (From Scratch), 
-this project is engineered to help students and practitioners master GPT-2 internals by 
-transitioning from foundational theory to a modular, production-ready ML platform.
+Inspired by Sebastian Raschka’s work, **Build a Large Language Model (From Scratch)**, 
+this project is developed to help students and practitioners iteratively build and test 
+differnt GPT-2 architectures by using a modular, production-ready ML platform.
+
+It also features optional Distributed Data Parallel (DDP) support for scaling training 
+seamlessly across multiple GPUs or nodes.
 
 ## Setup & Installation
 
@@ -21,11 +24,10 @@ cd gpt2-classifier
 
 ```
 
-This project supports automatic dependency resolution for both **CPU-only** and
+This platform supports automatic dependency resolution for both **CPU-only** and
 **CUDA-enabled** environments on **Linux (64-bit)** and should also support
-**Windows (64-bit)** and **macOS (Apple Silicon/ARM64)**.
-
-> [!WARNING] This application has been only tested and verified on Linux (64-bit).
+**Windows (64-bit)** and **macOS (Apple Silicon/ARM64)**. However, it is only tested 
+and verified on Linux (64-bit) system.
 
 ### 2. Fast Local Installation via `uv`
 
@@ -191,17 +193,6 @@ python -m gpt2_classifier train \
 You can track training metrics, loss curves, and hardware utilization in real time by 
 passing the `--use-wandb` flag during training.
 
-### Usage Example
-
-```bash
-python -m gpt2_classifier train \
-  --model-name "gpt2-small (124M)" \
-  --dataset sms-spam \
-  --num-epochs 5 \
-  --use-wandb
-
-```
-
 ### Authentication Setup
 
 To use online logging:
@@ -224,11 +215,21 @@ enabling seamless authentication and real-time run tracking on your WandB dashbo
 > **Security Note:** Ensure your `.env` file is added to `.gitignore` so your private API key 
 > is never committed to public version control.
 
+### Usage Example
+
+```bash
+python -m gpt2_classifier train \
+  --model-name "gpt2-small (124M)" \
+  --dataset sms-spam \
+  --num-epochs 5 \
+  --use-wandb
+
+```
 
 ## Contributing
 
-This application is developed to guide practitioners and students through building, fine-tuning, and 
-scaling GPT-2-based LLMs in a structured, production-ready environment and it's under active development.
+This platform is developed to help practitioners and students iteratively build, fine-tune, and 
+scale GPT-2-based LLMs in a structured, production-ready environment and it's under active development.
 
 Contributions from the community are warmly welcomed! Whether you are fixing bugs, optimizing model 
 training pipelines, or enhancing documentation, your efforts help make this resource better for everyone.
@@ -249,7 +250,7 @@ proposed design before submitting a pull request.
 
 ## Licensing
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+This platform is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
 
 Portions of this software are derived or adapted from work by Sebastian Raschka, originally licensed under 
 the Apache License, Version 2.0. A copy of the Apache License is included in [LICENSE-APACHE](LICENSE-APACHE).
