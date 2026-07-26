@@ -104,7 +104,7 @@ def plot_values(
     train_values: list[float],
     val_values: list[float],
     label: str = "loss",
-    output_dir: Path = paths.MODELS_DIR,
+    output_dir: Path = paths.MODELS_DIR / "metric-plots",
 ) -> Path:
     """Plot train/validation curves against both epochs and examples seen.
 
@@ -148,7 +148,7 @@ def plot_results(
     train_accs: list[float],
     val_accs: list[float],
     examples_seen: int,
-    output_dir: Path = paths.MODELS_DIR,
+    output_dir: Path = paths.MODELS_DIR / "metric-plots",
 ) -> None:
     """Plot both loss and accuracy curves for a fine-tuning run.
 
@@ -161,6 +161,7 @@ def plot_results(
         examples_seen: Total number of training examples seen.
         output_dir: Directory to save the resulting PDFs into.
     """
+        
     epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
     examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
     plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses, output_dir=output_dir)
