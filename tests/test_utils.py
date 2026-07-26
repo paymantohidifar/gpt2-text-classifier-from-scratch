@@ -24,8 +24,8 @@ def test_plot_values_writes_to_given_output_dir(tmp_path):
     assert output_path.exists()
 
 
-def test_plot_results_writes_all_metric_plots(tmp_path):
-    plot_results(
+def test_plot_results_writes_single_combined_plot(tmp_path):
+    output_path = plot_results(
         num_epochs=1,
         train_losses=[1.0, 0.8],
         val_losses=[1.1, 0.9],
@@ -41,11 +41,7 @@ def test_plot_results_writes_all_metric_plots(tmp_path):
         output_dir=tmp_path,
     )
 
-    expected_files = {
-        "loss-plot.pdf",
-        "accuracy-plot.pdf",
-        "precision-plot.pdf",
-        "roc_auc-plot.pdf",
-        "pr_auc-plot.pdf",
-    }
-    assert expected_files.issubset({p.name for p in tmp_path.iterdir()})
+    assert output_path.parent == tmp_path
+    assert output_path.name == "training-metrics.pdf"
+    assert output_path.exists()
+    assert [p.name for p in tmp_path.iterdir()] == ["training-metrics.pdf"]
