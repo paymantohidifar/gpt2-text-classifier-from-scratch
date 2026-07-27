@@ -154,10 +154,10 @@ def plot_values(
         train_values: Training metric values.
         val_values: Validation metric values.
         label: Metric name, used in the legend and output filename.
-        output_dir: Directory to save the resulting PDF into.
+        output_dir: Directory to save the resulting PNG into.
 
     Returns:
-        Path to the saved PDF.
+        Path to the saved PNG.
     """
     fig, ax = plt.subplots(figsize=(5, 3))
     _draw_metric(ax, epochs_seen, examples_seen, train_values, val_values, label)
@@ -167,8 +167,8 @@ def plot_values(
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"{label}-plot.pdf"
-    fig.savefig(output_path)
+    output_path = output_dir / f"{label}-plot.png"
+    fig.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
     return output_path
 
@@ -206,10 +206,10 @@ def plot_results(
         train_pr_aucs: Training PR-AUC values recorded per epoch.
         val_pr_aucs: Validation PR-AUC values recorded per epoch.
         examples_seen: Total number of training examples seen.
-        output_dir: Directory to save the resulting PDF into.
+        output_dir: Directory to save the resulting PNG into.
 
     Returns:
-        Path to the saved combined-metrics PDF.
+        Path to the saved combined-metrics PNG.
     """
     metrics = [
         ("loss", train_losses, val_losses),
