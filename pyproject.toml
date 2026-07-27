@@ -10,7 +10,7 @@ authors = [
     { name = "Payman Tohidifar", email = "payman.tohidifar@gmail.com" }
 ]
 readme = "README.md"
-requires-python = ">= 3.11"
+requires-python = "== 3.11.*"
 license = { text = "MIT" }
 
 # Base dependencies for the project (CPU and GPU shared)
