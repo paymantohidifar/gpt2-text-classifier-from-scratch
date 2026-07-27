@@ -86,13 +86,13 @@ DATASET_REGISTRY: dict[str, DatasetSpec] = {
         name="email-spam",
         url=(
             "https://raw.githubusercontent.com/MWiechmann/enron_spam_data/"
-            "master/enron_spam_data.csv"
+            "master/enron_spam_data.zip"
         ),
         raw_filename="enron_spam_data.csv",
         text_column="Message",
         label_column="Spam/Ham",
         label_map={"ham": 0, "spam": 1},
-        archive_format="none",
+        archive_format="zip",
         separator=",",
     ),
 }

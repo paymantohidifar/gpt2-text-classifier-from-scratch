@@ -14,22 +14,24 @@ from typing import Any
 import torch
 
 from gpt2_classifier import paths
-from gpt2_classifier.evaluate import calc_accuracy_loader, calc_loss_batch, evaluate_model
+from gpt2_classifier.evaluate import calc_classification_metrics_loader, calc_loss_batch, evaluate_model
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
+from gpt2_classifier.utils import get_device, plot_results
 
-TrainingHistory = tuple[list[float], list[float], list[float], list[float], int]
-
-
-def get_device() -> torch.device:
-    """Return the CUDA device if available, otherwise CPU.
-
-    Returns:
-        A ``torch.device``. Code that calls this never hardcodes "cuda" or
-        "cpu" directly, so the same code works unchanged on a CPU-only
-        development machine and on a CUDA-enabled machine (e.g. Colab).
-    """
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+TrainingHistory = tuple[
+    list[float],  # train_losses
+    list[float],  # val_losses
+    list[float],  # train_accs
+    list[float],  # val_accs
+    list[float],  # train_precisions
+    list[float],  # val_precisions
+    list[float],  # train_roc_aucs
+    list[float],  # val_roc_aucs
+    list[float],  # train_pr_aucs
+    list[float],  # val_pr_aucs
+    int,  # examples_seen
+]
 
 
 def train_classifier_simple(
@@ -59,13 +61,18 @@ def train_classifier_simple(
             disabled/``None`` logger is a safe no-op.
 
     Returns:
-        A ``(train_losses, val_losses, train_accs, val_accs, examples_seen)``
-        tuple recorded over the course of training.
+        A ``(train_losses, val_losses, train_accs, val_accs, train_precisions,
+        val_precisions, train_roc_aucs, val_roc_aucs, train_pr_aucs,
+        val_pr_aucs, examples_seen)`` tuple recorded over the course of
+        training.
     """
     if logger is None:
         logger = RunLogger(enabled=False)
 
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
+    train_precisions, val_precisions = [], []
+    train_roc_aucs, val_roc_aucs = [], []
+    train_pr_aucs, val_pr_aucs = [], []
     examples_seen, global_step = 0, -1
 
     for epoch in range(num_epochs):
@@ -92,16 +99,52 @@ def train_classifier_simple(
                     f"Train loss {train_loss:.3f}, Val loss {val_loss:.3f}"
                 )
 
-        train_accuracy = calc_accuracy_loader(train_loader, model, device, num_batches=eval_iter)
-        val_accuracy = calc_accuracy_loader(val_loader, model, device, num_batches=eval_iter)
-        print(f"Training accuracy: {train_accuracy * 100:.2f}% | ", end="")
-        print(f"Validation accuracy: {val_accuracy * 100:.2f}%")
-        train_accs.append(train_accuracy)
-        val_accs.append(val_accuracy)
-        logger.log({"train_accuracy": train_accuracy, "val_accuracy": val_accuracy, "epoch": epoch + 1})
+        train_metrics = calc_classification_metrics_loader(train_loader, model, device, num_batches=eval_iter)
+        val_metrics = calc_classification_metrics_loader(val_loader, model, device, num_batches=eval_iter)
+        print(f"Training accuracy: {train_metrics.accuracy * 100:.2f}% | ", end="")
+        print(f"Validation accuracy: {val_metrics.accuracy * 100:.2f}%")
+        print(
+            f"Train precision: {train_metrics.precision:.3f}, ROC-AUC: {train_metrics.roc_auc:.3f}, "
+            f"PR-AUC: {train_metrics.pr_auc:.3f} | "
+            f"Val precision: {val_metrics.precision:.3f}, ROC-AUC: {val_metrics.roc_auc:.3f}, "
+            f"PR-AUC: {val_metrics.pr_auc:.3f}"
+        )
+        train_accs.append(train_metrics.accuracy)
+        val_accs.append(val_metrics.accuracy)
+        train_precisions.append(train_metrics.precision)
+        val_precisions.append(val_metrics.precision)
+        train_roc_aucs.append(train_metrics.roc_auc)
+        val_roc_aucs.append(val_metrics.roc_auc)
+        train_pr_aucs.append(train_metrics.pr_auc)
+        val_pr_aucs.append(val_metrics.pr_auc)
+        logger.log(
+            {
+                "train_accuracy": train_metrics.accuracy,
+                "val_accuracy": val_metrics.accuracy,
+                "train_precision": train_metrics.precision,
+                "val_precision": val_metrics.precision,
+                "train_roc_auc": train_metrics.roc_auc,
+                "val_roc_auc": val_metrics.roc_auc,
+                "train_pr_auc": train_metrics.pr_auc,
+                "val_pr_auc": val_metrics.pr_auc,
+                "epoch": epoch + 1,
+            }
+        )
 
     logger.finish()
-    return train_losses, val_losses, train_accs, val_accs, examples_seen
+    return (
+        train_losses,
+        val_losses,
+        train_accs,
+        val_accs,
+        train_precisions,
+        val_precisions,
+        train_roc_aucs,
+        val_roc_aucs,
+        train_pr_aucs,
+        val_pr_aucs,
+        examples_seen,
+    )
 
 
 def _prepare_for_classification_finetuning(
@@ -128,6 +171,32 @@ def _prepare_for_classification_finetuning(
         param.requires_grad = True
 
 
+def get_adam_param_groups(model: GPTModel, weight_decay: float = 0.1):
+    """
+    Filters trainable parameters and splits them into weight-decay 
+    and no-weight-decay groups (excluding 1D tensors like biases/LayerNorm).
+    """
+    decay_params = []
+    no_decay_params = []
+
+    for name, param in model.named_parameters():
+        # Skip non-trainable parameters completely
+        if not param.requires_grad:
+            continue
+
+        # Separate 1D parameters (biases, norms) from 2D+ weight matrices
+        if param.ndim >= 2:
+            decay_params.append(param)
+        else:
+            no_decay_params.append(param)
+
+    optim_groups = [
+        {"params": decay_params, "weight_decay": weight_decay},
+        {"params": no_decay_params, "weight_decay": 0.0},
+    ]
+    return optim_groups
+
+
 def finetune_model(
     train_loader: torch.utils.data.DataLoader,
     val_loader: torch.utils.data.DataLoader,
@@ -136,6 +205,7 @@ def finetune_model(
     num_classes: int = 2,
     lr: float = 5e-5,
     weight_decay: float = 0.1,
+    optimize_adamw: bool = True,
     num_epochs: int = 5,
     eval_freq: int = 50,
     eval_iter: int = 5,
@@ -143,6 +213,7 @@ def finetune_model(
     rank: int = 0,
     world_size: int = 1,
     logger: RunLogger | None = None,
+    plot_metrics: bool = True,
     checkpoint_path: Path | None = paths.MODELS_DIR / "spam_classifier.pt",
     label_names: dict[int, str] | None = None,
 ) -> TrainingHistory:
@@ -156,6 +227,7 @@ def finetune_model(
         num_classes: Number of output classes.
         lr: Learning rate for AdamW.
         weight_decay: Weight decay for AdamW.
+        optimize_adamw: Exclude weight decay from 1D tensors
         num_epochs: Number of epochs to train for.
         eval_freq: Evaluate loss every this many training steps.
         eval_iter: Number of batches to sample per evaluation.
@@ -177,16 +249,23 @@ def finetune_model(
             when not given.
 
     Returns:
-        A ``(train_losses, val_losses, train_accs, val_accs, examples_seen)``
-        tuple recorded over the course of training.
+        A ``(train_losses, val_losses, train_accs, val_accs, train_precisions,
+        val_precisions, train_roc_aucs, val_roc_aucs, train_pr_aucs,
+        val_pr_aucs, examples_seen)`` tuple recorded over the course of
+        training.
     """
     device = get_device()
     _prepare_for_classification_finetuning(model, model_config, num_classes, device)
 
     torch.manual_seed(123)
-    optimizer = torch.optim.AdamW(
-        (p for p in model.parameters() if p.requires_grad), lr=lr, weight_decay=weight_decay
-    )
+    if optimize_adamw:
+        optim_groups = get_adam_param_groups(model, weight_decay=weight_decay)
+        optimizer = torch.optim.AdamW(optim_groups, lr=lr)
+        print("Excluded weight decay effect on 1D tensors (e.g. LayerNorm/biases) in AdamW optimizer.")
+    else:
+        optimizer = torch.optim.AdamW(
+            (p for p in model.parameters() if p.requires_grad), lr=lr, weight_decay=weight_decay
+        )
 
     start_time = time.time()
     if use_ddp:
@@ -201,6 +280,11 @@ def finetune_model(
         )
     execution_time_minutes = (time.time() - start_time) / 60
     print(f"Training completed in {execution_time_minutes:.2f} minutes.")
+
+    if plot_metrics:
+        #FIXME pass two arguments history is fixed
+        # history = (num_epochs,) + history
+        plot_results(num_epochs, *history)
 
     if checkpoint_path is not None:
         checkpoint_path = Path(checkpoint_path)

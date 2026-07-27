@@ -1,13 +1,12 @@
 """From-scratch GPT-2 architecture.
 
-Replaces the old ``gpt.py`` (same architecture, unchanged forward-pass
-logic) -- a standard pre-norm decoder-only transformer, built so that
+A standard pre-norm decoder-only transformer, built so that
 pretrained GPT-2 weights can be loaded into it via
 :mod:`gpt2_classifier.weights`.
 """
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 from gpt2_classifier.config import GPTConfig
 
@@ -62,7 +61,7 @@ class MultiHeadAttention(nn.Module):
         Returns:
             Tensor of shape ``(batch, num_tokens, d_out)``.
         """
-        b, num_tokens, d_in = x.shape
+        b, num_tokens, _d_in = x.shape
 
         keys = self.W_key(x)
         queries = self.W_query(x)
@@ -249,7 +248,7 @@ class GPTModel(nn.Module):
             ``(batch, num_tokens, num_classes)`` after ``out_head`` has been
             replaced for classification fine-tuning).
         """
-        batch_size, seq_len = in_idx.shape
+        _batch_size, seq_len = in_idx.shape
         tok_embeds = self.tok_emb(in_idx)
         pos_embeds = self.pos_emb(torch.arange(seq_len, device=in_idx.device))
         x = tok_embeds + pos_embeds

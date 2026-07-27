@@ -15,7 +15,7 @@ import torch
 from torch.distributed import destroy_process_group, init_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from gpt2_classifier.evaluate import calc_accuracy_loader, calc_loss_batch, evaluate_model
+from gpt2_classifier.evaluate import calc_classification_metrics_loader, calc_loss_batch, evaluate_model
 from gpt2_classifier.train import TrainingHistory
 
 
@@ -71,12 +71,17 @@ def train_classifier_ddp(
         eval_iter: Number of batches to sample per evaluation.
 
     Returns:
-        A ``(train_losses, val_losses, train_accs, val_accs, examples_seen)``
-        tuple recorded over the course of training.
+        A ``(train_losses, val_losses, train_accs, val_accs, train_precisions,
+        val_precisions, train_roc_aucs, val_roc_aucs, train_pr_aucs,
+        val_pr_aucs, examples_seen)`` tuple recorded over the course of
+        training.
     """
     ddp_setup(rank, world_size)
 
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
+    train_precisions, val_precisions = [], []
+    train_roc_aucs, val_roc_aucs = [], []
+    train_pr_aucs, val_pr_aucs = [], []
     examples_seen, global_step = 0, -1
 
     model.to(rank)
@@ -107,12 +112,18 @@ def train_classifier_ddp(
                 )
 
         try:
-            train_accuracy = calc_accuracy_loader(train_loader, model, rank, num_batches=eval_iter)
-            val_accuracy = calc_accuracy_loader(val_loader, model, rank, num_batches=eval_iter)
-            print(f"[GPU{rank}] Training accuracy: {train_accuracy * 100:.2f}% | ", end="")
-            print(f"[GPU{rank}] Validation accuracy: {val_accuracy * 100:.2f}%")
-            train_accs.append(train_accuracy)
-            val_accs.append(val_accuracy)
+            train_metrics = calc_classification_metrics_loader(train_loader, model, rank, num_batches=eval_iter)
+            val_metrics = calc_classification_metrics_loader(val_loader, model, rank, num_batches=eval_iter)
+            print(f"[GPU{rank}] Training accuracy: {train_metrics.accuracy * 100:.2f}% | ", end="")
+            print(f"[GPU{rank}] Validation accuracy: {val_metrics.accuracy * 100:.2f}%")
+            train_accs.append(train_metrics.accuracy)
+            val_accs.append(val_metrics.accuracy)
+            train_precisions.append(train_metrics.precision)
+            val_precisions.append(val_metrics.precision)
+            train_roc_aucs.append(train_metrics.roc_auc)
+            val_roc_aucs.append(val_metrics.roc_auc)
+            train_pr_aucs.append(train_metrics.pr_auc)
+            val_pr_aucs.append(val_metrics.pr_auc)
         except ZeroDivisionError as e:
             raise ZeroDivisionError(
                 f"{e}\n\nThis path is designed for multi-GPU DDP training. Run it as:\n"
@@ -121,4 +132,16 @@ def train_classifier_ddp(
 
     destroy_process_group()
 
-    return train_losses, val_losses, train_accs, val_accs, examples_seen
+    return (
+        train_losses,
+        val_losses,
+        train_accs,
+        val_accs,
+        train_precisions,
+        val_precisions,
+        train_roc_aucs,
+        val_roc_aucs,
+        train_pr_aucs,
+        val_pr_aucs,
+        examples_seen,
+    )

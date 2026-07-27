@@ -14,7 +14,7 @@ from pathlib import Path
 from gpt2_classifier import paths
 from gpt2_classifier.config import URL_DIR, get_model_config
 from gpt2_classifier.data import create_data_loaders, prepare_dataset
-from gpt2_classifier.datasets_registry import ArchiveFormat, DATASET_REGISTRY, DatasetSpec, get_dataset_spec
+from gpt2_classifier.datasets_registry import DATASET_REGISTRY, ArchiveFormat, DatasetSpec, get_dataset_spec
 from gpt2_classifier.inference import run_prediction
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
@@ -131,7 +131,8 @@ def _run_train(args: argparse.Namespace) -> None:
     model = GPTModel(model_config)
     load_weights_into_gpt(model, state_dict)
 
-    prepare_dataset(spec, data_dir=paths.DATA_DIR)
+    prepare_dataset(
+        spec, data_dir=paths.DATA_DIR, balance_labels=args.balance_labels, dataset_split=args.dataset_split)
     train_loader, val_loader, _test_loader = create_data_loaders(
         dataset_name=spec.name,
         data_dir=paths.DATA_DIR,
@@ -151,11 +152,13 @@ def _run_train(args: argparse.Namespace) -> None:
         num_classes=len(spec.label_map),
         lr=args.lr,
         weight_decay=args.weight_decay,
+        optimize_adamw=args.optimize_adamw,
         num_epochs=args.num_epochs,
         eval_freq=args.eval_freq,
         eval_iter=args.eval_iter,
         use_ddp=args.ddp,
         logger=logger,
+        plot_metrics=args.plot_metrics,
         checkpoint_path=checkpoint_path,
         label_names=label_names,
     )
@@ -201,13 +204,17 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--text-column", default=None)
     train_parser.add_argument("--label-column", default=None)
     train_parser.add_argument("--label-map", default=None, help="e.g. 'ham=0,spam=1'")
+    train_parser.add_argument("--balance-labels", action="store_true", default=True, help="Balance labels")
+    train_parser.add_argument('--dataset-split', type=float, nargs=2, help='Fraction of train/validation/test sets sep. by space (e.g. 0.7 0.1 0.2)')
     train_parser.add_argument("--num-epochs", type=int, default=5)
     train_parser.add_argument("--batch-size", type=int, default=8)
     train_parser.add_argument("--lr", type=float, default=5e-5)
     train_parser.add_argument("--weight-decay", type=float, default=0.1)
+    train_parser.add_argument("--optimize-adamw", action="store_true", default=True, help="Excludes weight decay on 1D tensors (e.g. LayerNorm/biases)")
     train_parser.add_argument("--eval-freq", type=int, default=50)
     train_parser.add_argument("--eval-iter", type=int, default=5)
-    train_parser.add_argument("--use-wandb", action="store_true")
+    train_parser.add_argument("--use-wandb", action="store_true", default=False)
+    train_parser.add_argument("--plot-metrics", action="store_true", default=True)
     train_parser.add_argument("--ddp", action="store_true", help="Use multi-GPU DDP training (requires torchrun)")
     train_parser.add_argument("--checkpoint-path", type=Path, default=None)
     train_parser.set_defaults(func=_run_train)

@@ -22,7 +22,7 @@ source-agnostic (see `datasets_registry.py`).
 ## Running things
 
 ```
-pixi run pytest                          # full test suite
+uv run pytest                            # full test suite
 python -m gpt2_classifier download-weights --model-name "gpt2-small (124M)"
 python -m gpt2_classifier train --dataset sms-spam --num-epochs 5 [--use-wandb] [--ddp]
 python -m gpt2_classifier train --data-url <url> --text-column ... --label-column ... --label-map "ham=0,spam=1"
@@ -41,5 +41,3 @@ python -m gpt2_classifier generate --prompt "..."   # raw LM generation, debug o
 ## Testing
 
 `tests/` has one file per module plus `conftest.py` (shared fixtures: `tiny_gpt_config`, `tiny_gpt_config_real_vocab` for tests that tokenize with the real `tiktoken` "gpt2" encoding, `tiny_gpt_model`, `synthetic_labeled_dataframe`). Tests use tiny configs and mock network calls — no real downloads or full training runs in the suite.
-
-See `docs/refactor-summary.md` for the full history of what was fixed and why.

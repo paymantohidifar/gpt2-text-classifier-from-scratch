@@ -1,9 +1,8 @@
 """Dataset download, preparation, and PyTorch DataLoader construction.
 
-Replaces the old ``dataset.py``. Every function here is driven by a
-:class:`gpt2_classifier.datasets_registry.DatasetSpec` rather than hardcoded
-SMS-spam-specific URLs/columns, so any two-column text/label dataset --
-registered (``sms-spam``, ``email-spam``) or ad-hoc (built at the CLI layer
+Every function here is driven by a :class:`gpt2_classifier.datasets_registry.DatasetSpec` 
+rather than hardcoded URLs/columns, so any two-column text/label dataset -- registered 
+(``sms-spam``, ``email-spam``) or ad-hoc (built at the CLI layer
 from ``--data-url``/``--data-path``) -- flows through the same pipeline.
 """
 
@@ -15,6 +14,7 @@ import pandas as pd
 import requests
 import tiktoken
 import torch
+from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
@@ -118,11 +118,12 @@ def create_balanced_dataset(df: pd.DataFrame, label_column: str = _NORMALIZED_LA
         group.sample(minority_count, random_state=123)
         for _, group in df.groupby(label_column)
     ]
+
     return pd.concat(balanced_frames).reset_index(drop=True)
 
 
 def random_split(
-    df: pd.DataFrame, train_frac: float, validation_frac: float
+    df: pd.DataFrame, train_frac: float, validation_frac: float, test_frac: float
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Shuffle and split a DataFrame into train/validation/test partitions.
 
@@ -135,19 +136,28 @@ def random_split(
     Returns:
         A ``(train_df, validation_df, test_df)`` tuple.
     """
-    df = df.sample(frac=1, random_state=123).reset_index(drop=True)
 
-    train_end = int(len(df) * train_frac)
-    validation_end = train_end + int(len(df) * validation_frac)
+    # Split original df into train+valid set and test set
+    test_size = int(len(df) * test_frac)
+    train_valid_df, test_df = train_test_split(
+        df, test_size=test_size, stratify=df[_NORMALIZED_LABEL_COLUMN], random_state=123
+        )
 
-    train_df = df[:train_end]
-    validation_df = df[train_end:validation_end]
-    test_df = df[validation_end:]
+    # Split train+valid set into train set and valid set
+    valid_size = int(len(train_valid_df) * validation_frac / (train_frac + validation_frac))
+    train_df, validation_df = train_test_split(
+        train_valid_df, test_size=valid_size, stratify=train_valid_df[_NORMALIZED_LABEL_COLUMN], random_state=123
+        )
 
     return train_df, validation_df, test_df
 
 
-def prepare_dataset(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
+def prepare_dataset(
+        spec: DatasetSpec,
+        data_dir: Path = paths.DATA_DIR,
+        balance_labels: bool = True,
+        dataset_split: list[float] | None = None,
+        ) -> Path:
     """Download, normalize, balance, split, and persist a dataset as CSVs.
 
     Writes ``train.csv``/``validation.csv``/``test.csv`` under
@@ -159,6 +169,10 @@ def prepare_dataset(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
         spec: Dataset source description.
         data_dir: Root directory under which per-dataset subdirectories are
             created and CSVs are written.
+        balance_labels: Balance datsets based on ``_NORMALIZED_LABEL_COLUMN``
+            column
+        dataset_split: List of floats carrying fractions for train, validation, 
+            and test sets.
 
     Returns:
         The dataset's output directory (``data_dir / spec.name``).
@@ -179,8 +193,18 @@ def prepare_dataset(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
     df = df.dropna(subset=[_NORMALIZED_TEXT_COLUMN, _NORMALIZED_LABEL_COLUMN])
     df[_NORMALIZED_LABEL_COLUMN] = df[_NORMALIZED_LABEL_COLUMN].map(spec.label_map)
 
-    balanced_df = create_balanced_dataset(df)
-    train_df, validation_df, test_df = random_split(balanced_df, 0.7, 0.1)
+    if dataset_split is None:
+        train_frac = 0.7
+        validation_frac = 0.1
+        test_frac = 0.2
+    else:
+        train_frac, validation_frac, test_frac = dataset_split
+
+    if balance_labels:
+        balanced_df = create_balanced_dataset(df)
+        train_df, validation_df, test_df = random_split(balanced_df, train_frac, validation_frac, test_frac)
+    else:
+        train_df, validation_df, test_df = random_split(df, train_frac, validation_frac, test_frac)
 
     output_dir = data_dir / spec.name
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -192,7 +216,7 @@ def prepare_dataset(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
 
 
 class TextClassificationDataset(Dataset):
-    """A tokenized, padded text-classification dataset (was ``SpamDataset``)."""
+    """A tokenized, padded text-classification dataset."""
 
     def __init__(
         self,

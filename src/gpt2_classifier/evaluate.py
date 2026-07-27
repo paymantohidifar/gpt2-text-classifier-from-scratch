@@ -1,7 +1,100 @@
 """Loss and accuracy computation for classification fine-tuning."""
 
+from collections.abc import Iterator
+from dataclasses import dataclass, fields
+
 import torch
+from sklearn.metrics import average_precision_score, precision_score, roc_auc_score
 from torch.utils.data import DataLoader
+
+
+@dataclass(frozen=True)
+class ClassificationMetrics:
+    """Classification metrics computed over a full DataLoader pass.
+
+    Assumes a binary classifier (2 output logits); ``precision``,
+    ``roc_auc``, and ``pr_auc`` are computed for the positive class
+    (index 1) using its softmax probability.
+
+    Attributes:
+        accuracy: Fraction of correctly classified examples in ``[0, 1]``.
+        precision: Binary precision for the positive class.
+        roc_auc: Area under the ROC curve. ``NaN`` if the evaluated subset
+            contains only one class (undefined) or is empty.
+        pr_auc: Area under the precision-recall curve (average precision).
+            ``NaN`` under the same conditions as ``roc_auc``.
+    """
+
+    accuracy: float
+    precision: float
+    roc_auc: float
+    pr_auc: float
+
+    def __iter__(self) -> Iterator[tuple[str, float]]:
+        """Yield (field_name, field_value) pairs for key-value unpacking."""
+        for field in fields(self):
+            yield field.name, getattr(self, field.name)
+
+
+def calc_classification_metrics_loader(
+    data_loader: DataLoader, model: torch.nn.Module, device: torch.device, num_batches: int | None = None
+) -> ClassificationMetrics:
+    """Compute accuracy, precision, ROC-AUC, and PR-AUC over a DataLoader.
+
+    Args:
+        data_loader: Yields ``(input_batch, target_batch)`` pairs.
+        model: A classification model whose last-token logits are used.
+        device: Device to run the forward pass on.
+        num_batches: If given, only evaluate the first ``num_batches``
+            batches instead of the whole loader.
+
+    Returns:
+        A :class:`ClassificationMetrics` with all fields ``NaN`` if
+        ``data_loader`` (or the evaluated prefix) is empty.
+    """
+    model.eval()
+    correct_predictions, num_examples = 0, 0
+    all_targets: list[int] = []
+    all_preds: list[int] = []
+    all_pos_probs: list[float] = []
+
+    if num_batches is None:
+        num_batches = len(data_loader)
+    else:
+        num_batches = min(num_batches, len(data_loader))
+    for i, (input_batch, target_batch) in enumerate(data_loader):
+        if i < num_batches:
+            input_batch, target_batch = input_batch.to(device), target_batch.to(device)
+
+            with torch.no_grad():
+                logits = model(input_batch)[:, -1, :]
+            probs = torch.softmax(logits, dim=-1)
+            predicted_labels = torch.argmax(logits, dim=-1)
+
+            num_examples += predicted_labels.shape[0]
+            correct_predictions += (predicted_labels == target_batch).sum().item()
+            all_targets.extend(target_batch.cpu().tolist())
+            all_preds.extend(predicted_labels.cpu().tolist())
+            all_pos_probs.extend(probs[:, 1].cpu().tolist())
+        else:
+            break
+
+    if num_examples == 0:
+        return ClassificationMetrics(
+            accuracy=float("nan"), precision=float("nan"), roc_auc=float("nan"), pr_auc=float("nan")
+        )
+
+    accuracy = correct_predictions / num_examples
+    precision = precision_score(all_targets, all_preds, pos_label=1, zero_division=0.0)
+    if len(set(all_targets)) < 2:
+        # roc_auc/pr_auc are undefined when only one class is present.
+        roc_auc = float("nan")
+        pr_auc = float("nan")
+    else:
+        roc_auc = roc_auc_score(all_targets, all_pos_probs)
+        pr_auc = average_precision_score(all_targets, all_pos_probs)
+
+    return ClassificationMetrics(accuracy=accuracy, precision=precision, roc_auc=roc_auc, pr_auc=pr_auc)
 
 
 def calc_accuracy_loader(
@@ -19,26 +112,7 @@ def calc_accuracy_loader(
     Returns:
         Fraction of correctly classified examples in ``[0, 1]``.
     """
-    model.eval()
-    correct_predictions, num_examples = 0, 0
-
-    if num_batches is None:
-        num_batches = len(data_loader)
-    else:
-        num_batches = min(num_batches, len(data_loader))
-    for i, (input_batch, target_batch) in enumerate(data_loader):
-        if i < num_batches:
-            input_batch, target_batch = input_batch.to(device), target_batch.to(device)
-
-            with torch.no_grad():
-                logits = model(input_batch)[:, -1, :]
-            predicted_labels = torch.argmax(logits, dim=-1)
-
-            num_examples += predicted_labels.shape[0]
-            correct_predictions += (predicted_labels == target_batch).sum().item()
-        else:
-            break
-    return correct_predictions / num_examples
+    return calc_classification_metrics_loader(data_loader, model, device, num_batches).accuracy
 
 
 def calc_loss_batch(

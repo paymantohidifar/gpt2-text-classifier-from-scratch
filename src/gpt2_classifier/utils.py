@@ -1,10 +1,4 @@
-"""Generic helpers: greedy text generation, tokenization glue, and plotting.
-
-Replaces the old grab-bag ``utils.py``. Weight loading (``assign``,
-``load_weights_into_gpt``, ``download_and_load_gpt2``) now lives in
-:mod:`gpt2_classifier.weights`; DDP setup now lives in
-:mod:`gpt2_classifier.train_ddp`.
-"""
+"""Generic helpers: greedy text generation, tokenization glue, and plotting."""
 
 from pathlib import Path
 
@@ -14,6 +8,17 @@ import torch
 
 from gpt2_classifier import paths
 from gpt2_classifier.model import GPTModel
+
+
+def get_device() -> torch.device:
+    """Return the CUDA device if available, otherwise CPU.
+
+    Returns:
+        A ``torch.device``. Code that calls this never hardcodes "cuda" or
+        "cpu" directly, so the same code works unchanged on a CPU-only
+        development machine and on a CUDA-enabled machine (e.g. Colab).
+    """
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def generate_text_simple(
@@ -104,13 +109,42 @@ def generate_response(text: str | None, model: GPTModel, max_new_tokens: int = 2
     return response
 
 
+def _draw_metric(
+    ax: plt.Axes,
+    epochs_seen: torch.Tensor,
+    examples_seen: torch.Tensor,
+    train_values: list[float],
+    val_values: list[float],
+    label: str,
+) -> None:
+    """Draw train/validation curves for one metric onto ``ax``.
+
+    Args:
+        ax: Axes to draw onto.
+        epochs_seen: X-axis values (epochs) for the primary axis.
+        examples_seen: X-axis values (examples seen) for the secondary axis.
+        train_values: Training metric values.
+        val_values: Validation metric values.
+        label: Metric name, used in the legend and axis label.
+    """
+    ax.plot(epochs_seen, train_values, label=f"Training {label}")
+    ax.plot(epochs_seen, val_values, linestyle="-.", label=f"Validation {label}")
+    ax.set_xlabel("Epochs")
+    ax.set_ylabel(label.capitalize())
+    ax.legend()
+
+    ax_top = ax.twiny()
+    ax_top.plot(examples_seen, train_values, alpha=0)
+    ax_top.set_xlabel("Examples seen")
+
+
 def plot_values(
     epochs_seen: torch.Tensor,
     examples_seen: torch.Tensor,
     train_values: list[float],
     val_values: list[float],
     label: str = "loss",
-    output_dir: Path = paths.MODELS_DIR,
+    output_dir: Path = paths.MODELS_DIR / "metric-plots",
 ) -> Path:
     """Plot train/validation curves against both epochs and examples seen.
 
@@ -120,29 +154,21 @@ def plot_values(
         train_values: Training metric values.
         val_values: Validation metric values.
         label: Metric name, used in the legend and output filename.
-        output_dir: Directory to save the resulting PDF into.
+        output_dir: Directory to save the resulting PNG into.
 
     Returns:
-        Path to the saved PDF.
+        Path to the saved PNG.
     """
-    fig, ax1 = plt.subplots(figsize=(5, 3))
-
-    ax1.plot(epochs_seen, train_values, label=f"Training {label}")
-    ax1.plot(epochs_seen, val_values, linestyle="-.", label=f"Validation {label}")
-    ax1.set_xlabel("Epochs")
-    ax1.set_ylabel(label.capitalize())
-    ax1.legend()
-
-    ax2 = ax1.twiny()
-    ax2.plot(examples_seen, train_values, alpha=0)
-    ax2.set_xlabel("Examples seen")
+    fig, ax = plt.subplots(figsize=(5, 3))
+    _draw_metric(ax, epochs_seen, examples_seen, train_values, val_values, label)
 
     fig.tight_layout()
+    plt.show()
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"{label}-plot.pdf"
-    plt.savefig(output_path)
+    output_path = output_dir / f"{label}-plot.png"
+    fig.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
     return output_path
 
@@ -153,10 +179,19 @@ def plot_results(
     val_losses: list[float],
     train_accs: list[float],
     val_accs: list[float],
+    train_precisions: list[float],
+    val_precisions: list[float],
+    train_roc_aucs: list[float],
+    val_roc_aucs: list[float],
+    train_pr_aucs: list[float],
+    val_pr_aucs: list[float],
     examples_seen: int,
-    output_dir: Path = paths.MODELS_DIR,
-) -> None:
-    """Plot both loss and accuracy curves for a fine-tuning run.
+    output_dir: Path = paths.PLOTS_DIR / "training",
+) -> Path:
+    """Plot loss, accuracy, precision, ROC-AUC, and PR-AUC curves for a run.
+
+    All five metrics are drawn as subplots of one combined figure, shown
+    inline (e.g. in a Jupyter notebook) and saved once to disk.
 
     Args:
         num_epochs: Total number of epochs trained.
@@ -164,15 +199,40 @@ def plot_results(
         val_losses: Validation loss values recorded during training.
         train_accs: Training accuracy values recorded per epoch.
         val_accs: Validation accuracy values recorded per epoch.
+        train_precisions: Training precision values recorded per epoch.
+        val_precisions: Validation precision values recorded per epoch.
+        train_roc_aucs: Training ROC-AUC values recorded per epoch.
+        val_roc_aucs: Validation ROC-AUC values recorded per epoch.
+        train_pr_aucs: Training PR-AUC values recorded per epoch.
+        val_pr_aucs: Validation PR-AUC values recorded per epoch.
         examples_seen: Total number of training examples seen.
-        output_dir: Directory to save the resulting PDFs into.
-    """
-    epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
-    examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
-    plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses, output_dir=output_dir)
+        output_dir: Directory to save the resulting PNG into.
 
-    epochs_tensor = torch.linspace(0, num_epochs, len(train_accs))
-    examples_seen_tensor = torch.linspace(0, examples_seen, len(train_accs))
-    plot_values(
-        epochs_tensor, examples_seen_tensor, train_accs, val_accs, label="accuracy", output_dir=output_dir
-    )
+    Returns:
+        Path to the saved combined-metrics PNG.
+    """
+    metrics = [
+        ("loss", train_losses, val_losses),
+        ("accuracy", train_accs, val_accs),
+        ("precision", train_precisions, val_precisions),
+        ("roc_auc", train_roc_aucs, val_roc_aucs),
+        ("pr_auc", train_pr_aucs, val_pr_aucs),
+    ]
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+    axes = axes.flatten()
+    for ax, (label, train_values, val_values) in zip(axes, metrics):
+        epochs_tensor = torch.linspace(0, num_epochs, len(train_values))
+        examples_seen_tensor = torch.linspace(0, examples_seen, len(train_values))
+        _draw_metric(ax, epochs_tensor, examples_seen_tensor, train_values, val_values, label)
+    axes[-1].axis("off")
+
+    fig.tight_layout()
+    plt.show()
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "metrics.png"
+    fig.savefig(output_path, bbox_inches='tight')
+    plt.close(fig)
+    return output_path

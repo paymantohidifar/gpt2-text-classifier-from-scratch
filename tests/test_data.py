@@ -24,7 +24,7 @@ def test_create_balanced_dataset_equalizes_class_counts(synthetic_labeled_datafr
 def test_random_split_proportions():
     df = pd.DataFrame({"Text": [f"t{i}" for i in range(100)], "Label": [0] * 50 + [1] * 50})
 
-    train_df, val_df, test_df = random_split(df, train_frac=0.7, validation_frac=0.1)
+    train_df, val_df, test_df = random_split(df, train_frac=0.7, validation_frac=0.1, test_frac=0.2)
 
     assert len(train_df) == 70
     assert len(val_df) == 10
@@ -56,6 +56,20 @@ def test_prepare_dataset_normalizes_headerless_source(tmp_path, monkeypatch):
         "spam\twin a prize now\n"
         "ham\thow are you\n"
         "spam\tclaim your reward\n"
+        "ham\tGood night\n"
+        "spam\tAmazing trophy for you\n"
+        "ham\thello there\n"
+        "spam\twin a prize now\n"
+        "ham\thow are you\n"
+        "spam\tclaim your reward\n"
+        "ham\tGood night\n"
+        "spam\tAmazing trophy for you\n"
+        "ham\thello there\n"
+        "spam\twin a prize now\n"
+        "ham\thow are you\n"
+        "spam\tclaim your reward\n"
+        "ham\tGood night\n"
+        "spam\tAmazing trophy for you\n"
     )
 
     spec = DatasetSpec(
@@ -78,7 +92,7 @@ def test_prepare_dataset_normalizes_headerless_source(tmp_path, monkeypatch):
         lambda spec, data_dir=tmp_path: raw_file,
     )
 
-    output_dir = prepare_dataset(spec, data_dir=tmp_path)
+    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
 
     train_df = pd.read_csv(output_dir / "train.csv")
     val_df = pd.read_csv(output_dir / "validation.csv")
@@ -93,9 +107,13 @@ def test_prepare_dataset_normalizes_headered_source(tmp_path, monkeypatch):
     raw_file = tmp_path / "email.csv"
     pd.DataFrame(
         {
-            "Message ID": [1, 2, 3, 4],
-            "Message": ["hi there", "win money now", "lunch tomorrow?", "claim prize today"],
-            "Spam/Ham": ["ham", "spam", "ham", "spam"],
+            "Message ID": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "Message": ["hi there", "win money now", "lunch tomorrow?", "claim prize today",
+                        "hi there", "win money now", "lunch tomorrow?", "claim prize today",
+                        "hi there", "win money now", "lunch tomorrow?", "claim prize today"],
+            "Spam/Ham": ["ham", "spam", "ham", "spam",
+                         "ham", "spam", "ham", "spam",
+                         "ham", "spam", "ham", "spam"],
         }
     ).to_csv(raw_file, index=False)
 
@@ -115,6 +133,6 @@ def test_prepare_dataset_normalizes_headered_source(tmp_path, monkeypatch):
         lambda spec, data_dir=tmp_path: raw_file,
     )
 
-    output_dir = prepare_dataset(spec, data_dir=tmp_path)
+    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
     train_df = pd.read_csv(output_dir / "train.csv")
     assert set(train_df.columns) >= {"Text", "Label"}

@@ -1,11 +1,4 @@
-"""GPT-2 model configuration presets.
-
-Replaces the old ``gpt_config.py``. ``BASE_CONFIG`` and ``model_configs`` are
-kept as the canonical presets, but callers should use :func:`get_model_config`
-rather than mutating ``BASE_CONFIG`` directly -- the previous code mutated a
-shared module-level dict via ``BASE_CONFIG.update(...)``, which leaked state
-across calls (and would be unsafe across DDP worker processes/tests).
-"""
+"""GPT-2 model configuration presets."""
 
 from typing import TypedDict
 

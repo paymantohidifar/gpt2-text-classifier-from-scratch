@@ -1,48 +1,98 @@
-[project]
-authors = [{name = "Payman Tohidifar", email = "payman.tohidifar@gmail.com"}]
-dependencies = [
-    "torch>=2.2",
-    "numpy>=1.26",
-    "pandas>=2.2",
-    "tiktoken>=0.7",
-    "safetensors>=0.4",
-    "tqdm>=4.66",
-    "matplotlib>=3.8",
-    "requests>=2.31",
-    "wandb>=0.17",
-]
-name = "gpt2-classifier"
-requires-python = ">= 3.11"
-version = "0.1.0"
-
-[project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
-
 [build-system]
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
+[project]
+name = "gpt2-classifier"
+version = "0.1.0"
+description = "GPT2-powered text classifier for binary classification tasks."
+authors = [
+    { name = "Payman Tohidifar", email = "payman.tohidifar@gmail.com" }
+]
+readme = "README.md"
+requires-python = "== 3.11.*"
+license = { text = "MIT" }
+
+# Base dependencies for the project (CPU and GPU shared)
+dependencies = [
+    "numpy>=2.2.0",
+    "pandas>=2.2.0",
+    "tiktoken>=0.7",
+    "safetensors>=0.4",
+    "tqdm>=4.66",
+    "matplotlib>=3.8",
+    "requests>=2.28",
+    "wandb>=0.17",
+    "python-dotenv>=1.2.2",
+    "jupyterlab>=4.6.2",
+    "ipykernel>=7.3.0",
+    "scikit-learn>=1.9.0",
+    "seaborn>=0.13.2",
+]
+
+# Mutually Exclusive Hardware Accel Groups and Dev Utilities
+[project.optional-dependencies]
+cpu = ["torch==2.6.0"]
+gpu = ["torch==2.6.0"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+# Local packages to include in the wheel distribution
+[tool.hatch.build.targets.wheel]
+packages = ["src/gpt2_classifier"]
+
+# --- UV hardware acceleration configuration ---
+[tool.uv]
+conflicts = [ [{ extra = "cpu" }, { extra = "gpu" }] ]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-gpu"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-gpu", extra = "gpu" }
+]
+
+# --- Ruff configuration ---
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+# --- Pixi Configuration Hook (Read ONLY by local Pixi installations) ---
 [tool.pixi.workspace]
 channels = ["conda-forge"]
-platforms = ["linux-64"]
+platforms = ["linux-64", "win-64", "osx-arm64"]
+
+[tool.pixi.dependencies]
+python = "3.11.*"
 
 [tool.pixi.pypi-dependencies]
 gpt2_classifier = { path = ".", editable = true }
 
-[tool.pixi.tasks]
-test = "pytest"
-lint = "ruff check ."
+[tool.pixi.feature.cpu.pypi-dependencies]
+torch = { version = "==2.6.0", index = "https://download.pytorch.org/whl/cpu" }
 
-[tool.pixi.dependencies]
-python = "3.11.*"
+[tool.pixi.feature.gpu]
+platforms = ["linux-64", "win-64"] # no CUDA wheels on osx-arm64
+
+[tool.pixi.feature.gpu.pypi-dependencies]
+torch = { version = "==2.6.0", index = "https://download.pytorch.org/whl/cu124" }
 
 [tool.pixi.feature.dev.pypi-dependencies]
 pytest = ">=8.0"
 ruff = ">=0.6"
 
 [tool.pixi.environments]
-default = { features = ["dev"], solve-group = "default" }
+default = ["cpu", "dev"] # Standard local install defaults to clean CPU + Dev
+gpu-env = ["gpu", "dev"] # GPU setup activates the full CUDA framework pipeline
 
-[tool.ruff]
-line-length = 110
-target-version = "py311"
+[tool.pixi.tasks]
+test = "pytest"
+lint = "ruff check ."

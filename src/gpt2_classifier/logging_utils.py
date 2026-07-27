@@ -8,6 +8,8 @@ printed warning.
 
 from typing import Any
 
+from dotenv import load_dotenv
+
 
 class RunLogger:
     """Wraps ``wandb.init``/``log``/``finish``, no-op when disabled."""
@@ -35,9 +37,11 @@ class RunLogger:
             try:
                 import wandb
 
+                load_dotenv()
+                wandb.login()
                 self._wandb = wandb
                 self._run = wandb.init(project=project, config=config)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - must degrade to a no-op on any wandb failure
                 print(f"[wandb] disabled due to init failure: {exc}")
                 self.enabled = False
 
