@@ -42,6 +42,6 @@ def test_plot_results_writes_single_combined_plot(tmp_path):
     )
 
     assert output_path.parent == tmp_path
-    assert output_path.name == "training-metrics.pdf"
+    assert output_path.name == "metrics.png"
     assert output_path.exists()
-    assert [p.name for p in tmp_path.iterdir()] == ["training-metrics.pdf"]
+    assert [p.name for p in tmp_path.iterdir()] == ["metrics.png"]
