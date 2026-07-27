@@ -17,7 +17,7 @@ from gpt2_classifier import paths
 from gpt2_classifier.evaluate import calc_classification_metrics_loader, calc_loss_batch, evaluate_model
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
-from gpt2_classifier.utils import plot_results, get_device
+from gpt2_classifier.utils import get_device, plot_results
 
 TrainingHistory = tuple[
     list[float],  # train_losses

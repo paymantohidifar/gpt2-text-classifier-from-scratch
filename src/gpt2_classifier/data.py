@@ -14,9 +14,9 @@ import pandas as pd
 import requests
 import tiktoken
 import torch
+from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
-from sklearn.model_selection import train_test_split
 
 from gpt2_classifier import paths
 from gpt2_classifier.datasets_registry import DatasetSpec

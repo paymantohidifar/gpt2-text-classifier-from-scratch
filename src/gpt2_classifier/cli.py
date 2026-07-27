@@ -14,7 +14,7 @@ from pathlib import Path
 from gpt2_classifier import paths
 from gpt2_classifier.config import URL_DIR, get_model_config
 from gpt2_classifier.data import create_data_loaders, prepare_dataset
-from gpt2_classifier.datasets_registry import ArchiveFormat, DATASET_REGISTRY, DatasetSpec, get_dataset_spec
+from gpt2_classifier.datasets_registry import DATASET_REGISTRY, ArchiveFormat, DatasetSpec, get_dataset_spec
 from gpt2_classifier.inference import run_prediction
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel

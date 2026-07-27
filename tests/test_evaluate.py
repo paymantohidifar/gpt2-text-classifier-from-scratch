@@ -1,3 +1,5 @@
+import math
+
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -42,7 +44,7 @@ def test_calc_loss_loader_averages_over_batches(tiny_gpt_config, tiny_gpt_model)
     avg_loss = calc_loss_loader(loader, model, device)
 
     assert isinstance(avg_loss, float)
-    assert avg_loss == avg_loss  # not NaN
+    assert not math.isnan(avg_loss)
 
 
 def test_calc_loss_loader_empty_returns_nan(tiny_gpt_model):
@@ -51,7 +53,7 @@ def test_calc_loss_loader_empty_returns_nan(tiny_gpt_model):
 
     result = calc_loss_loader(empty_loader, model, torch.device("cpu"))
 
-    assert result != result  # NaN != NaN
+    assert math.isnan(result)
 
 
 def test_calc_accuracy_loader_in_valid_range(tiny_gpt_config, tiny_gpt_model):
