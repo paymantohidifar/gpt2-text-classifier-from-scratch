@@ -123,7 +123,7 @@ def create_balanced_dataset(df: pd.DataFrame, label_column: str = _NORMALIZED_LA
 
 
 def random_split(
-    df: pd.DataFrame, train_frac: float, validation_frac: float
+    df: pd.DataFrame, train_frac: float, validation_frac: float, test_frac: float
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Shuffle and split a DataFrame into train/validation/test partitions.
 
@@ -138,7 +138,7 @@ def random_split(
     """
 
     # Split original df into train+valid set and test set
-    test_size = int(len(df) * (1.0 - train_frac - validation_frac))
+    test_size = int(len(df) * test_frac)
     train_valid_df, test_df = train_test_split(
         df, test_size=test_size, stratify=df[_NORMALIZED_LABEL_COLUMN], random_state=123
         )
@@ -171,8 +171,8 @@ def prepare_dataset(
             created and CSVs are written.
         balance_labels: Balance datsets based on ``_NORMALIZED_LABEL_COLUMN``
             column
-        dataset_split: List of floats carrying fractions for train and validation
-            datasets.
+        dataset_split: List of floats carrying fractions for train, validation, 
+            and test sets.
 
     Returns:
         The dataset's output directory (``data_dir / spec.name``).
@@ -196,14 +196,15 @@ def prepare_dataset(
     if dataset_split is None:
         train_frac = 0.7
         validation_frac = 0.1
+        test_frac = 0.2
     else:
-        train_frac, validation_frac = dataset_split
+        train_frac, validation_frac, test_frac = dataset_split
 
     if balance_labels:
         balanced_df = create_balanced_dataset(df)
-        train_df, validation_df, test_df = random_split(balanced_df, train_frac, validation_frac)
+        train_df, validation_df, test_df = random_split(balanced_df, train_frac, validation_frac, test_frac)
     else:
-        train_df, validation_df, test_df = random_split(df, train_frac, validation_frac)
+        train_df, validation_df, test_df = random_split(df, train_frac, validation_frac, test_frac)
 
     output_dir = data_dir / spec.name
     output_dir.mkdir(parents=True, exist_ok=True)

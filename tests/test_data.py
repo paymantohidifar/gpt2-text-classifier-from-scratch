@@ -24,7 +24,7 @@ def test_create_balanced_dataset_equalizes_class_counts(synthetic_labeled_datafr
 def test_random_split_proportions():
     df = pd.DataFrame({"Text": [f"t{i}" for i in range(100)], "Label": [0] * 50 + [1] * 50})
 
-    train_df, val_df, test_df = random_split(df, train_frac=0.7, validation_frac=0.1)
+    train_df, val_df, test_df = random_split(df, train_frac=0.7, validation_frac=0.1, test_frac=0.2)
 
     assert len(train_df) == 70
     assert len(val_df) == 10
@@ -92,7 +92,7 @@ def test_prepare_dataset_normalizes_headerless_source(tmp_path, monkeypatch):
         lambda spec, data_dir=tmp_path: raw_file,
     )
 
-    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2])
+    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
 
     train_df = pd.read_csv(output_dir / "train.csv")
     val_df = pd.read_csv(output_dir / "validation.csv")
@@ -133,6 +133,6 @@ def test_prepare_dataset_normalizes_headered_source(tmp_path, monkeypatch):
         lambda spec, data_dir=tmp_path: raw_file,
     )
 
-    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2])
+    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
     train_df = pd.read_csv(output_dir / "train.csv")
     assert set(train_df.columns) >= {"Text", "Label"}
