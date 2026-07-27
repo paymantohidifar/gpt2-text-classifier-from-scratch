@@ -186,7 +186,7 @@ def plot_results(
     train_pr_aucs: list[float],
     val_pr_aucs: list[float],
     examples_seen: int,
-    output_dir: Path = paths.MODELS_DIR / "metric-plots",
+    output_dir: Path = paths.PLOTS_DIR / "training-plots",
 ) -> Path:
     """Plot loss, accuracy, precision, ROC-AUC, and PR-AUC curves for a run.
 
@@ -232,7 +232,7 @@ def plot_results(
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / "training-metrics.pdf"
+    output_path = output_dir / "metrics.pdf"
     fig.savefig(output_path)
     plt.close(fig)
     return output_path
