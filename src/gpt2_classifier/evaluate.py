@@ -1,10 +1,12 @@
 """Loss and accuracy computation for classification fine-tuning."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import torch
 from sklearn.metrics import average_precision_score, precision_score, roc_auc_score
 from torch.utils.data import DataLoader
+
+from typing import Iterator, Tuple 
 
 
 @dataclass(frozen=True)
@@ -28,6 +30,11 @@ class ClassificationMetrics:
     precision: float
     roc_auc: float
     pr_auc: float
+
+    def __iter__(self) -> Iterator[Tuple[str, float]]:
+        """Yield (field_name, field_value) pairs for key-value unpacking."""
+        for field in fields(self):
+            yield field.name, getattr(self, field.name)
 
 
 def calc_classification_metrics_loader(
