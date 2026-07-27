@@ -22,7 +22,7 @@ source-agnostic (see `datasets_registry.py`).
 ## Running things
 
 ```
-pixi run pytest                          # full test suite
+uv run pytest                            # full test suite
 python -m gpt2_classifier download-weights --model-name "gpt2-small (124M)"
 python -m gpt2_classifier train --dataset sms-spam --num-epochs 5 [--use-wandb] [--ddp]
 python -m gpt2_classifier train --data-url <url> --text-column ... --label-column ... --label-map "ham=0,spam=1"
