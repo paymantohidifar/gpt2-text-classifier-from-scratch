@@ -8,8 +8,8 @@ Inspired by Sebastian Raschka’s work, **Build a Large Language Model (From Scr
 this project is developed to help students and practitioners iteratively build and test 
 differnt GPT-2 architectures by using a modular, production-ready ML platform.
 
-It also features optional Distributed Data Parallel (DDP) support for scaling training 
-seamlessly across multiple GPUs or nodes.
+It also features complete metric suite for model evaluation and offers optional 
+Distributed Data Parallel (DDP) support for scaling training seamlessly across multiple GPUs or nodes.
 
 ## Setup & Installation
 
@@ -191,7 +191,7 @@ python -m gpt2_classifier train \
 ```
 
 ## Real-Time Monitoring with Weights & Biases (WandB)
-
+1
 You can track training metrics, loss curves, and hardware utilization in real time by 
 passing the `--use-wandb` flag during training.
 
@@ -227,6 +227,29 @@ python -m gpt2_classifier train \
   --use-wandb
 
 ```
+
+## Interactive Notebooks
+
+- [`01_balanced_smsspam_classification.ipynb`](notebooks/01_balanced_smsspam_classification.ipynb) — 
+end-to-end walkthrough: prepare a balanced SMS-spam dataset, load pretrained GPT-2 weights, finetune 
+a classification head, and run inference. Also runnable directly on 
+[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/01_balanced_smsspam_classification.ipynb).
+
+- [`02_balanced_emailspam_classification.ipynb`](notebooks/02_balanced_emailspam_classification.ipynb) — 
+end-to-end walkthrough: prepare a balanced email-spam dataset, load pretrained GPT-2 weights, finetune 
+a classification head, and run inference. Also runnable directly on 
+[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/02_balanced_emailspam_classification.ipynb).
+
+
+## Snapshots of Training & Model Metrics
+
+Loss/accuracy curves and final classifier metrics from a reference training run:
+
+<img src="plots/training/metrics.png" alt="Training metrics" width="750">
+
+<br>
+
+<img src="plots/training/model_metrics.png" alt="Model metrics" width="500">
 
 ## Contributing
 
