@@ -186,7 +186,7 @@ def plot_results(
     train_pr_aucs: list[float],
     val_pr_aucs: list[float],
     examples_seen: int,
-    output_dir: Path = paths.PLOTS_DIR / "training-plots",
+    output_dir: Path = paths.PLOTS_DIR / "training",
 ) -> Path:
     """Plot loss, accuracy, precision, ROC-AUC, and PR-AUC curves for a run.
 
