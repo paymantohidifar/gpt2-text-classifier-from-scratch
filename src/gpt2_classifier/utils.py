@@ -232,7 +232,7 @@ def plot_results(
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / "metrics.pdf"
-    fig.savefig(output_path)
+    output_path = output_dir / "metrics.png"
+    fig.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
     return output_path
