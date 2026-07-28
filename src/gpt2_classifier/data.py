@@ -46,7 +46,7 @@ def _download_with_fallback(spec: DatasetSpec, destination: Path) -> None:
         _download_file(spec.backup_url, destination)
 
 
-def download_and_extract(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
+def download_and_extract(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR, force: bool = False) -> Path:
     """Download and (if archived) extract a dataset, returning the raw file path.
 
     Idempotent: if the raw file already exists under
@@ -57,6 +57,7 @@ def download_and_extract(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> 
         spec: Dataset source description.
         data_dir: Root directory under which per-dataset subdirectories are
             created.
+        force: Force download and extract the file even if the file aleady exists.
 
     Returns:
         Path to the raw (uncompressed) data file.
@@ -69,7 +70,7 @@ def download_and_extract(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> 
     dataset_dir.mkdir(parents=True, exist_ok=True)
     raw_path = dataset_dir / spec.raw_filename
 
-    if raw_path.exists():
+    if raw_path.exists() and not force:
         print(f"{raw_path} already exists. Skipping download and extraction.")
         return raw_path
 
@@ -157,6 +158,7 @@ def prepare_dataset(
         data_dir: Path = paths.DATA_DIR,
         balance_labels: bool = True,
         dataset_split: list[float] | None = None,
+        force: bool = False
         ) -> Path:
     """Download, normalize, balance, split, and persist a dataset as CSVs.
 
@@ -173,11 +175,12 @@ def prepare_dataset(
             column
         dataset_split: List of floats carrying fractions for train, validation, 
             and test sets.
+        force: Force download and extract the file even if the file aleady exists.
 
     Returns:
         The dataset's output directory (``data_dir / spec.name``).
     """
-    raw_path = download_and_extract(spec, data_dir)
+    raw_path = download_and_extract(spec, data_dir, force)
 
     read_kwargs = {"sep": spec.separator}
     if spec.has_header:
