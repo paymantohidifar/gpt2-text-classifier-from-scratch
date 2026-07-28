@@ -19,7 +19,7 @@ from gpt2_classifier.inference import run_prediction
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
 from gpt2_classifier.train import finetune_model
-from gpt2_classifier.utils import generate_response
+from gpt2_classifier.utils import generate_response, plot_results
 from gpt2_classifier.weights import download_and_load_gpt2, load_weights_into_gpt
 
 
@@ -144,7 +144,7 @@ def _run_train(args: argparse.Namespace) -> None:
     logger = RunLogger(enabled=args.use_wandb, config=vars(args))
     checkpoint_path = args.checkpoint_path or paths.MODELS_DIR / f"{spec.name}_classifier.pt"
 
-    finetune_model(
+    history = finetune_model(
         train_loader,
         val_loader,
         model,
@@ -162,6 +162,9 @@ def _run_train(args: argparse.Namespace) -> None:
         checkpoint_path=checkpoint_path,
         label_names=label_names,
     )
+
+    # Plot training/finetuning metrics for the dataset
+    plot_results(args.num_epochs, *history, spec.name, title=args.model_name)
 
 
 def _run_predict(args: argparse.Namespace) -> None:
