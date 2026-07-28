@@ -17,7 +17,8 @@ from gpt2_classifier import paths
 from gpt2_classifier.evaluate import calc_classification_metrics_loader, calc_loss_batch, evaluate_model
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
-from gpt2_classifier.utils import get_device, plot_results
+from gpt2_classifier.utils import get_device
+
 
 TrainingHistory = tuple[
     list[float],  # train_losses
@@ -213,7 +214,6 @@ def finetune_model(
     rank: int = 0,
     world_size: int = 1,
     logger: RunLogger | None = None,
-    plot_metrics: bool = True,
     checkpoint_path: Path | None = paths.MODELS_DIR / "spam_classifier.pt",
     label_names: dict[int, str] | None = None,
 ) -> TrainingHistory:
@@ -280,11 +280,6 @@ def finetune_model(
         )
     execution_time_minutes = (time.time() - start_time) / 60
     print(f"Training completed in {execution_time_minutes:.2f} minutes.")
-
-    if plot_metrics:
-        #FIXME pass two arguments history is fixed
-        # history = (num_epochs,) + history
-        plot_results(num_epochs, *history)
 
     if checkpoint_path is not None:
         checkpoint_path = Path(checkpoint_path)
