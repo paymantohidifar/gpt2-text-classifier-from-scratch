@@ -60,7 +60,6 @@ def test_finetune_model_runs_and_saves_checkpoint(tiny_gpt_config, tmp_path):
         num_epochs=1,
         eval_freq=1,
         eval_iter=1,
-        plot_metrics=False,
         checkpoint_path=checkpoint_path,
     )
 
@@ -95,7 +94,6 @@ def test_finetune_model_skips_checkpoint_when_path_is_none(tiny_gpt_config):
         num_epochs=1,
         eval_freq=1,
         eval_iter=1,
-        plot_metrics=False,
         checkpoint_path=None,
     )
     # No assertion needed beyond "did not raise" -- confirms the None path is safe.
