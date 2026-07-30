@@ -116,7 +116,6 @@ def _draw_metric(
     train_values: list[float],
     val_values: list[float],
     label: str,
-    title: str,
 ) -> None:
     """Draw train/validation curves for one metric onto ``ax``.
 
@@ -127,14 +126,11 @@ def _draw_metric(
         train_values: Training metric values.
         val_values: Validation metric values.
         label: Metric name, used in the legend and axis label.
-        title: Plot title.
     """
     ax.plot(epochs_seen, train_values, label=f"Training {label}")
     ax.plot(epochs_seen, val_values, linestyle="-.", label=f"Validation {label}")
     ax.set_xlabel("Epochs")
     ax.set_ylabel(label.capitalize())
-    if title is not None:
-        ax.set_title(title, fontweight='bold')
     ax.legend()
 
     ax_top = ax.twiny()
@@ -194,7 +190,6 @@ def plot_results(
     dataset: str,
     title: str | None = None,
     plot_name: str | None = "metrics.png",
-    output_dir: Path = paths.PLOTS_DIR,
 ) -> Path:
     """Plot loss, accuracy, precision, ROC-AUC, and PR-AUC curves for a run.
 
@@ -217,7 +212,6 @@ def plot_results(
         dataset: Dataset name.
         title: Optional plot title.
         plot_name: Plot name with its extension (e.g., PNG, PDF, JPEG, etc)
-        output_dir: Directory to save the resulting PNG into.
 
     Returns:
         Path to the saved combined-metrics PNG.
@@ -238,10 +232,13 @@ def plot_results(
         _draw_metric(ax, epochs_tensor, examples_seen_tensor, train_values, val_values, label, title)
     axes[-1].axis("off")
 
+    if title is not None:
+        fig.suptitle(title, fontweight='bold')
+
     fig.tight_layout()
     plt.show()
 
-    output_dir = Path(output_dir) / dataset
+    output_dir = paths.PLOTS_DIR / dataset
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / plot_name
     fig.savefig(output_path, bbox_inches='tight')
