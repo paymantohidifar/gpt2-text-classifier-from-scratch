@@ -89,10 +89,10 @@ def test_prepare_dataset_normalizes_headerless_source(tmp_path, monkeypatch):
     # is taken and no network access is attempted.
     monkeypatch.setattr(
         "gpt2_classifier.data.download_and_extract",
-        lambda spec, data_dir=tmp_path: raw_file,
+        lambda spec, force=False, data_dir=tmp_path: raw_file
     )
 
-    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
+    output_dir = prepare_dataset(spec, force=False, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
 
     train_df = pd.read_csv(output_dir / "train.csv")
     val_df = pd.read_csv(output_dir / "validation.csv")
@@ -130,9 +130,9 @@ def test_prepare_dataset_normalizes_headered_source(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "gpt2_classifier.data.download_and_extract",
-        lambda spec, data_dir=tmp_path: raw_file,
+        lambda spec, force=False, data_dir=tmp_path: raw_file,
     )
 
-    output_dir = prepare_dataset(spec, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
+    output_dir = prepare_dataset(spec, force=False, data_dir=tmp_path, dataset_split=[0.6, 0.2, 0.2])
     train_df = pd.read_csv(output_dir / "train.csv")
     assert set(train_df.columns) >= {"Text", "Label"}
