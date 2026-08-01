@@ -214,7 +214,7 @@ def finetune_model(
     rank: int = 0,
     world_size: int = 1,
     logger: RunLogger | None = None,
-    checkpoint_path: Path | None = paths.MODELS_DIR / "spam_classifier.pt",
+    checkpoint_name: str = "spam_classifier.pt",
     label_names: dict[int, str] | None = None,
 ) -> TrainingHistory:
     """Freeze the GPT-2 backbone, swap in a classifier head, and fine-tune it.
@@ -238,7 +238,7 @@ def finetune_model(
         world_size: Number of DDP processes (only meaningful when
             ``use_ddp=True``).
         logger: Optional :class:`RunLogger` for wandb metric logging.
-        checkpoint_path: Where to save the fine-tuned model's state dict
+        checkpoint_name: Name of fine-tuned model's state dict
             (plus its config, for :mod:`gpt2_classifier.inference` to
             reconstruct the model). Pass ``None`` to skip saving.
         label_names: Mapping from integer class id to a human-readable label
@@ -281,8 +281,8 @@ def finetune_model(
     execution_time_minutes = (time.time() - start_time) / 60
     print(f"Training completed in {execution_time_minutes:.2f} minutes.")
 
-    if checkpoint_path is not None:
-        checkpoint_path = Path(checkpoint_path)
+    if checkpoint_name is not None:
+        checkpoint_path = paths.MODELS_DIR / checkpoint_name
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(
             {
