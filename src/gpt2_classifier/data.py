@@ -157,6 +157,7 @@ def prepare_dataset(
         spec: DatasetSpec,
         force: bool = False,
         data_dir: Path = paths.DATA_DIR,
+        hold_frac: float = 1.0,
         balance_labels: bool = True,
         dataset_split: list[float] | None = None,
         ) -> Path:
@@ -190,6 +191,7 @@ def prepare_dataset(
         read_kwargs["names"] = spec.column_names
 
     df = pd.read_csv(raw_path, **read_kwargs)
+    df = df.sample(frac=hold_frac, random_split=123)
     df = df[[spec.text_column, spec.label_column]].rename(
         columns={spec.text_column: _NORMALIZED_TEXT_COLUMN, spec.label_column: _NORMALIZED_LABEL_COLUMN}
     )
