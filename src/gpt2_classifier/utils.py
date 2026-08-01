@@ -229,7 +229,7 @@ def plot_results(
     for ax, (label, train_values, val_values) in zip(axes, metrics):
         epochs_tensor = torch.linspace(0, num_epochs, len(train_values))
         examples_seen_tensor = torch.linspace(0, examples_seen, len(train_values))
-        _draw_metric(ax, epochs_tensor, examples_seen_tensor, train_values, val_values, label, title)
+        _draw_metric(ax, epochs_tensor, examples_seen_tensor, train_values, val_values, label)
     axes[-1].axis("off")
 
     if title is not None:
