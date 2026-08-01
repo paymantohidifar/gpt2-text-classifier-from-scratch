@@ -284,6 +284,7 @@ class TextClassificationDataset(Dataset):
 def create_data_loaders(
     dataset_name: str,
     data_dir: Path = paths.DATA_DIR,
+    max_length: int | None = None,
     batch_size: int = 8,
     num_cpu_workers: int = 0,
     use_ddp: bool = False,
@@ -294,6 +295,7 @@ def create_data_loaders(
         dataset_name: Name of the prepared dataset (matches the directory
             under ``data_dir`` created by :func:`prepare_dataset`).
         data_dir: Root directory containing per-dataset subdirectories.
+        max_length: Maximum number tokens allowed in each batch.
         batch_size: Batch size for all three loaders.
         num_cpu_workers: Number of DataLoader worker processes.
         use_ddp: If ``True``, the training loader uses a
@@ -308,7 +310,7 @@ def create_data_loaders(
     tokenizer = tiktoken.get_encoding("gpt2")
 
     train_dataset = TextClassificationDataset(
-        csv_file=dataset_dir / "train.csv", max_length=None, tokenizer=tokenizer
+        csv_file=dataset_dir / "train.csv", max_length=max_length, tokenizer=tokenizer
     )
     val_dataset = TextClassificationDataset(
         csv_file=dataset_dir / "validation.csv",
