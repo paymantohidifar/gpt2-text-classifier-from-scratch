@@ -18,7 +18,6 @@ from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
 from gpt2_classifier.utils import get_device
 
-
 TrainingHistory = tuple[
     list[float],  # train_losses
     list[float],  # val_losses
