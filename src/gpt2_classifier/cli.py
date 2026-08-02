@@ -208,7 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--label-column", default=None)
     train_parser.add_argument("--label-map", default=None, help="e.g. 'ham=0,spam=1'")
     train_parser.add_argument("--balance-labels", action="store_true", default=True, help="Balance labels")
-    train_parser.add_argument('--dataset-split', type=float, nargs=2, help='Fraction of train/validation/test sets sep. by space (e.g. 0.7 0.1 0.2)')
+    train_parser.add_argument('--dataset-split', type=float, nargs=3, help='Fraction of train/validation/test sets sep. by space (e.g. 0.7 0.1 0.2)')
     train_parser.add_argument("--num-epochs", type=int, default=5)
     train_parser.add_argument("--batch-size", type=int, default=8)
     train_parser.add_argument("--lr", type=float, default=5e-5)
