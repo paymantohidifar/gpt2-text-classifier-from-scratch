@@ -142,7 +142,7 @@ def _run_train(args: argparse.Namespace) -> None:
 
     label_names = {v: k for k, v in spec.label_map.items()}
     logger = RunLogger(enabled=args.use_wandb, config=vars(args))
-    checkpoint_path = args.checkpoint_path or paths.MODELS_DIR / f"{spec.name}_classifier.pt"
+    checkpoint_name = args.checkpoint_name or f"{spec.name}_classifier.pt"
 
     history = finetune_model(
         train_loader,
@@ -158,13 +158,13 @@ def _run_train(args: argparse.Namespace) -> None:
         eval_iter=args.eval_iter,
         use_ddp=args.ddp,
         logger=logger,
-        plot_metrics=args.plot_metrics,
-        checkpoint_path=checkpoint_path,
+        checkpoint_name=checkpoint_name,
         label_names=label_names,
     )
 
     # Plot training/finetuning metrics for the dataset
-    plot_results(args.num_epochs, *history, spec.name, title=args.model_name)
+    if args.plot_metrics:
+        plot_results(args.num_epochs, *history, spec.name, title=args.model_name)
 
 
 def _run_predict(args: argparse.Namespace) -> None:
@@ -219,7 +219,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--use-wandb", action="store_true", default=False)
     train_parser.add_argument("--plot-metrics", action="store_true", default=True)
     train_parser.add_argument("--ddp", action="store_true", help="Use multi-GPU DDP training (requires torchrun)")
-    train_parser.add_argument("--checkpoint-path", type=Path, default=None)
+    train_parser.add_argument("--checkpoint-name", default=None, help="Filename for the saved checkpoint (relative to models/)")
     train_parser.set_defaults(func=_run_train)
 
     predict_parser = subparsers.add_parser("predict", help="Classify a piece of text")
