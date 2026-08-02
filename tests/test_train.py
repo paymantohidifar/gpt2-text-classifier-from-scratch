@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
+from gpt2_classifier import paths
 from gpt2_classifier.model import GPTModel
 from gpt2_classifier.train import _prepare_for_classification_finetuning, finetune_model
 from gpt2_classifier.utils import get_device
@@ -33,11 +34,13 @@ def test_prepare_for_classification_finetuning_freezes_all_but_last_block(tiny_g
     assert all(not p.requires_grad for p in model.pos_emb.parameters())
 
 
-def test_finetune_model_runs_and_saves_checkpoint(tiny_gpt_config, tmp_path):
+def test_finetune_model_runs_and_saves_checkpoint(tiny_gpt_config, tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, "MODELS_DIR", tmp_path)
     model = GPTModel(tiny_gpt_config)
     train_loader = _tiny_loader(tiny_gpt_config["vocab_size"])
     val_loader = _tiny_loader(tiny_gpt_config["vocab_size"])
-    checkpoint_path = tmp_path / "classifier.pt"
+    checkpoint_name = "classifier.pt"
+    checkpoint_path = tmp_path / checkpoint_name
 
     (
         train_losses,
@@ -60,8 +63,7 @@ def test_finetune_model_runs_and_saves_checkpoint(tiny_gpt_config, tmp_path):
         num_epochs=1,
         eval_freq=1,
         eval_iter=1,
-        plot_metrics=False,
-        checkpoint_path=checkpoint_path,
+        checkpoint_name=checkpoint_name
     )
 
     assert len(train_accs) == 1
@@ -95,7 +97,6 @@ def test_finetune_model_skips_checkpoint_when_path_is_none(tiny_gpt_config):
         num_epochs=1,
         eval_freq=1,
         eval_iter=1,
-        plot_metrics=False,
-        checkpoint_path=None,
+        checkpoint_name=None,
     )
     # No assertion needed beyond "did not raise" -- confirms the None path is safe.

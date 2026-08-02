@@ -8,7 +8,6 @@ multi-GPU machine.
 """
 
 import time
-from pathlib import Path
 from typing import Any
 
 import torch
@@ -17,7 +16,7 @@ from gpt2_classifier import paths
 from gpt2_classifier.evaluate import calc_classification_metrics_loader, calc_loss_batch, evaluate_model
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
-from gpt2_classifier.utils import get_device, plot_results
+from gpt2_classifier.utils import get_device
 
 TrainingHistory = tuple[
     list[float],  # train_losses
@@ -213,8 +212,7 @@ def finetune_model(
     rank: int = 0,
     world_size: int = 1,
     logger: RunLogger | None = None,
-    plot_metrics: bool = True,
-    checkpoint_path: Path | None = paths.MODELS_DIR / "spam_classifier.pt",
+    checkpoint_name: str = "spam_classifier.pt",
     label_names: dict[int, str] | None = None,
 ) -> TrainingHistory:
     """Freeze the GPT-2 backbone, swap in a classifier head, and fine-tune it.
@@ -238,7 +236,7 @@ def finetune_model(
         world_size: Number of DDP processes (only meaningful when
             ``use_ddp=True``).
         logger: Optional :class:`RunLogger` for wandb metric logging.
-        checkpoint_path: Where to save the fine-tuned model's state dict
+        checkpoint_name: Name of fine-tuned model's state dict
             (plus its config, for :mod:`gpt2_classifier.inference` to
             reconstruct the model). Pass ``None`` to skip saving.
         label_names: Mapping from integer class id to a human-readable label
@@ -281,13 +279,8 @@ def finetune_model(
     execution_time_minutes = (time.time() - start_time) / 60
     print(f"Training completed in {execution_time_minutes:.2f} minutes.")
 
-    if plot_metrics:
-        #FIXME pass two arguments history is fixed
-        # history = (num_epochs,) + history
-        plot_results(num_epochs, *history)
-
-    if checkpoint_path is not None:
-        checkpoint_path = Path(checkpoint_path)
+    if checkpoint_name is not None:
+        checkpoint_path = paths.MODELS_DIR / checkpoint_name
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(
             {

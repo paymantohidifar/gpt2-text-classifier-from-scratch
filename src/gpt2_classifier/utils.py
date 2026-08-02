@@ -143,8 +143,9 @@ def plot_values(
     examples_seen: torch.Tensor,
     train_values: list[float],
     val_values: list[float],
-    label: str = "loss",
-    output_dir: Path = paths.MODELS_DIR / "metric-plots",
+    label: str,
+    dataset: str,
+    output_dir: Path = paths.PLOTS_DIR,
 ) -> Path:
     """Plot train/validation curves against both epochs and examples seen.
 
@@ -165,7 +166,7 @@ def plot_values(
     fig.tight_layout()
     plt.show()
 
-    output_dir = Path(output_dir)
+    output_dir = Path(output_dir) / dataset
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{label}-plot.png"
     fig.savefig(output_path, bbox_inches='tight')
@@ -186,7 +187,9 @@ def plot_results(
     train_pr_aucs: list[float],
     val_pr_aucs: list[float],
     examples_seen: int,
-    output_dir: Path = paths.PLOTS_DIR / "training",
+    dataset: str,
+    title: str | None = None,
+    plot_name: str | None = "metrics.png",
 ) -> Path:
     """Plot loss, accuracy, precision, ROC-AUC, and PR-AUC curves for a run.
 
@@ -206,7 +209,9 @@ def plot_results(
         train_pr_aucs: Training PR-AUC values recorded per epoch.
         val_pr_aucs: Validation PR-AUC values recorded per epoch.
         examples_seen: Total number of training examples seen.
-        output_dir: Directory to save the resulting PNG into.
+        dataset: Dataset name.
+        title: Optional plot title.
+        plot_name: Plot name with its extension (e.g., PNG, PDF, JPEG, etc)
 
     Returns:
         Path to the saved combined-metrics PNG.
@@ -227,12 +232,15 @@ def plot_results(
         _draw_metric(ax, epochs_tensor, examples_seen_tensor, train_values, val_values, label)
     axes[-1].axis("off")
 
+    if title is not None:
+        fig.suptitle(title, fontweight='bold')
+
     fig.tight_layout()
     plt.show()
 
-    output_dir = Path(output_dir)
+    output_dir = paths.PLOTS_DIR / dataset
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / "metrics.png"
+    output_path = output_dir / plot_name
     fig.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
     return output_path

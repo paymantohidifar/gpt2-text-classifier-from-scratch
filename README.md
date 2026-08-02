@@ -230,15 +230,15 @@ python -m gpt2_classifier train \
 
 ## Interactive Notebooks
 
-- [`01_balanced_smsspam_classification.ipynb`](notebooks/01_balanced_smsspam_classification.ipynb) — 
-end-to-end walkthrough: prepare a balanced SMS-spam dataset, load pretrained GPT-2 weights, finetune 
+- [`01_sms_spam_classification.ipynb`](notebooks/01_sms_spam_classification.ipynb) — 
+end-to-end walkthrough: prepare balanced/imbalanced SMS-spam dataset, load pretrained GPT-2 weights, finetune 
 a classification head, and run inference. Also runnable directly on 
-[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/01_balanced_smsspam_classification.ipynb).
+[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/01_sms_spam_classification.ipynb).
 
-- [`02_balanced_emailspam_classification.ipynb`](notebooks/02_balanced_emailspam_classification.ipynb) — 
-end-to-end walkthrough: prepare a balanced email-spam dataset, load pretrained GPT-2 weights, finetune 
+- [`02_email_spam_classification.ipynb`](notebooks/02_email_spam_classification.ipynb) — 
+end-to-end walkthrough: prepare a balanced/imbalanced email-spam dataset, load pretrained GPT-2 weights, finetune 
 a classification head, and run inference. Also runnable directly on 
-[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/02_balanced_emailspam_classification.ipynb).
+[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/02_email_spam_classification.ipynb).
 
 
 ## Snapshots of Training & Model Metrics

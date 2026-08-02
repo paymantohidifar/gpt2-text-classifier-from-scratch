@@ -19,7 +19,7 @@ from gpt2_classifier.inference import run_prediction
 from gpt2_classifier.logging_utils import RunLogger
 from gpt2_classifier.model import GPTModel
 from gpt2_classifier.train import finetune_model
-from gpt2_classifier.utils import generate_response
+from gpt2_classifier.utils import generate_response, plot_results
 from gpt2_classifier.weights import download_and_load_gpt2, load_weights_into_gpt
 
 
@@ -142,9 +142,9 @@ def _run_train(args: argparse.Namespace) -> None:
 
     label_names = {v: k for k, v in spec.label_map.items()}
     logger = RunLogger(enabled=args.use_wandb, config=vars(args))
-    checkpoint_path = args.checkpoint_path or paths.MODELS_DIR / f"{spec.name}_classifier.pt"
+    checkpoint_name = args.checkpoint_name or f"{spec.name}_classifier.pt"
 
-    finetune_model(
+    history = finetune_model(
         train_loader,
         val_loader,
         model,
@@ -158,10 +158,13 @@ def _run_train(args: argparse.Namespace) -> None:
         eval_iter=args.eval_iter,
         use_ddp=args.ddp,
         logger=logger,
-        plot_metrics=args.plot_metrics,
-        checkpoint_path=checkpoint_path,
+        checkpoint_name=checkpoint_name,
         label_names=label_names,
     )
+
+    # Plot training/finetuning metrics for the dataset
+    if args.plot_metrics:
+        plot_results(args.num_epochs, *history, spec.name, title=args.model_name)
 
 
 def _run_predict(args: argparse.Namespace) -> None:
@@ -205,7 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--label-column", default=None)
     train_parser.add_argument("--label-map", default=None, help="e.g. 'ham=0,spam=1'")
     train_parser.add_argument("--balance-labels", action="store_true", default=True, help="Balance labels")
-    train_parser.add_argument('--dataset-split', type=float, nargs=2, help='Fraction of train/validation/test sets sep. by space (e.g. 0.7 0.1 0.2)')
+    train_parser.add_argument('--dataset-split', type=float, nargs=3, help='Fraction of train/validation/test sets sep. by space (e.g. 0.7 0.1 0.2)')
     train_parser.add_argument("--num-epochs", type=int, default=5)
     train_parser.add_argument("--batch-size", type=int, default=8)
     train_parser.add_argument("--lr", type=float, default=5e-5)
@@ -216,7 +219,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--use-wandb", action="store_true", default=False)
     train_parser.add_argument("--plot-metrics", action="store_true", default=True)
     train_parser.add_argument("--ddp", action="store_true", help="Use multi-GPU DDP training (requires torchrun)")
-    train_parser.add_argument("--checkpoint-path", type=Path, default=None)
+    train_parser.add_argument("--checkpoint-name", default=None, help="Filename for the saved checkpoint (relative to models/)")
     train_parser.set_defaults(func=_run_train)
 
     predict_parser = subparsers.add_parser("predict", help="Classify a piece of text")

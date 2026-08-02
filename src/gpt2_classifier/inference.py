@@ -28,7 +28,7 @@ def load_classifier(
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    model_config = checkpoint["model_config"]
+    model_config = checkpoint["model_config"]   
     num_classes = checkpoint["num_classes"]
     label_names = checkpoint.get("label_names", {0: "ham", 1: "spam"})
 

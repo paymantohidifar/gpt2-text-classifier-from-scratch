@@ -46,7 +46,7 @@ def _download_with_fallback(spec: DatasetSpec, destination: Path) -> None:
         _download_file(spec.backup_url, destination)
 
 
-def download_and_extract(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> Path:
+def download_and_extract(spec: DatasetSpec, force: bool, data_dir: Path = paths.DATA_DIR) -> Path:
     """Download and (if archived) extract a dataset, returning the raw file path.
 
     Idempotent: if the raw file already exists under
@@ -55,6 +55,7 @@ def download_and_extract(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> 
 
     Args:
         spec: Dataset source description.
+        force: Force download and overwrite file even if it already exists.
         data_dir: Root directory under which per-dataset subdirectories are
             created.
 
@@ -69,7 +70,7 @@ def download_and_extract(spec: DatasetSpec, data_dir: Path = paths.DATA_DIR) -> 
     dataset_dir.mkdir(parents=True, exist_ok=True)
     raw_path = dataset_dir / spec.raw_filename
 
-    if raw_path.exists():
+    if raw_path.exists() and not force:
         print(f"{raw_path} already exists. Skipping download and extraction.")
         return raw_path
 
@@ -154,7 +155,9 @@ def random_split(
 
 def prepare_dataset(
         spec: DatasetSpec,
+        force: bool = False,
         data_dir: Path = paths.DATA_DIR,
+        hold_frac: float = 1.0,
         balance_labels: bool = True,
         dataset_split: list[float] | None = None,
         ) -> Path:
@@ -167,6 +170,7 @@ def prepare_dataset(
 
     Args:
         spec: Dataset source description.
+        force: Force download and overwrite file even if it already exists.
         data_dir: Root directory under which per-dataset subdirectories are
             created and CSVs are written.
         balance_labels: Balance datsets based on ``_NORMALIZED_LABEL_COLUMN``
@@ -177,7 +181,7 @@ def prepare_dataset(
     Returns:
         The dataset's output directory (``data_dir / spec.name``).
     """
-    raw_path = download_and_extract(spec, data_dir)
+    raw_path = download_and_extract(spec, force, data_dir)
 
     read_kwargs = {"sep": spec.separator}
     if spec.has_header:
@@ -187,6 +191,7 @@ def prepare_dataset(
         read_kwargs["names"] = spec.column_names
 
     df = pd.read_csv(raw_path, **read_kwargs)
+    df = df.sample(frac=hold_frac, random_state=123)
     df = df[[spec.text_column, spec.label_column]].rename(
         columns={spec.text_column: _NORMALIZED_TEXT_COLUMN, spec.label_column: _NORMALIZED_LABEL_COLUMN}
     )
@@ -279,6 +284,7 @@ class TextClassificationDataset(Dataset):
 def create_data_loaders(
     dataset_name: str,
     data_dir: Path = paths.DATA_DIR,
+    max_length: int | None = None,
     batch_size: int = 8,
     num_cpu_workers: int = 0,
     use_ddp: bool = False,
@@ -289,6 +295,7 @@ def create_data_loaders(
         dataset_name: Name of the prepared dataset (matches the directory
             under ``data_dir`` created by :func:`prepare_dataset`).
         data_dir: Root directory containing per-dataset subdirectories.
+        max_length: Maximum number tokens allowed in each batch.
         batch_size: Batch size for all three loaders.
         num_cpu_workers: Number of DataLoader worker processes.
         use_ddp: If ``True``, the training loader uses a
@@ -303,7 +310,7 @@ def create_data_loaders(
     tokenizer = tiktoken.get_encoding("gpt2")
 
     train_dataset = TextClassificationDataset(
-        csv_file=dataset_dir / "train.csv", max_length=None, tokenizer=tokenizer
+        csv_file=dataset_dir / "train.csv", max_length=max_length, tokenizer=tokenizer
     )
     val_dataset = TextClassificationDataset(
         csv_file=dataset_dir / "validation.csv",
