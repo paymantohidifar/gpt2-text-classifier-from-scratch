@@ -8,7 +8,6 @@ multi-GPU machine.
 """
 
 import time
-from pathlib import Path
 from typing import Any
 
 import torch
