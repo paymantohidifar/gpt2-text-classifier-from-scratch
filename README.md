@@ -245,11 +245,11 @@ a classification head, and run inference. Also runnable directly on
 
 Loss/accuracy curves and final classifier metrics from a reference training run:
 
-<img src="plots/training/metrics.png" alt="Training metrics" width="750">
+<img src="plots/sms-spam/metrics.png" alt="Training metrics" width="750">
 
 <br>
 
-<img src="plots/training/model_metrics.png" alt="Model metrics" width="500">
+<img src="plots/sms-spam/model_metrics.png" alt="Model metrics" width="500">
 
 ## Contributing
 
