@@ -15,7 +15,7 @@ Distributed Data Parallel (DDP) support for scaling training seamlessly across m
 
 ### 1. Clone the Repository
 
-Clone the repository to your local machine (See below for deployment on Google Colab). 
+Clone the repository to your local machine (See below for deployment on Google Colab or Lightning AI Studio). 
 This command checks out the `main` branch and places it into a clean `gpt2-classifier` directory:
 
 ```bash
@@ -127,6 +127,42 @@ Replace `gpu` with `cpu` in the installation command (`uv pip install -e .[cpu,d
 when setting up on a machine without NVIDIA CUDA support.
 
 > **Important:** Once the cell finishes running, navigate to **Runtime → Restart session** in the top menu. This clears Colab's background Python cache so it can successfully read the newly installed packages.
+
+
+### 5. Lightning AI Studio (CPU/GPU)
+
+Unlike Google Colab, Lightning AI Studio gives you a persistent cloud environment: your libraries, code, and downloaded weights stay intact across sessions, so there's no re-installation friction when you disconnect, reconnect, or switch between CPU and GPU.
+
+It also offers 1-4 free GPUs for up to 40 hours, which pairs well with `torchrun` for DDP-based multi-GPU training.
+
+**Setup procedure:**
+
+1. Create a free account at [lightning.ai](https://lightning.ai/) and open a new Studio.
+2. Select your desired machine (CPU, single GPU, or multi-GPU) from the Studio's hardware picker — you can change this later without losing your environment.
+3. Open the Studio's built-in terminal and run the following block once to clone the codebase and install dependencies:
+
+```bash
+# Clone the codebase
+git clone https://github.com/paymantohidifar/gpt2-text-classifier-from-scratch.git --branch main gpt2-classifier
+cd gpt2-classifier
+
+# Bootstrap uv and install GPU-enabled packages
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:${PATH}"
+uv sync --extra gpu --extra dev
+
+```
+
+Replace `gpu` with `cpu` in the installation command (`uv sync --extra cpu --extra dev`) when working on a CPU-only Studio.
+
+> **Note:** Because Studios are persistent, this setup only needs to run once. On future sessions, simply reopen the Studio — your environment, code, and downloaded weights will already be in place.
+
+4. Verify the installation:
+
+```bash
+uv run pytest
+
+```
 
 ## CLI usage
 
