@@ -15,7 +15,7 @@ Distributed Data Parallel (DDP) support for scaling training seamlessly across m
 
 ### 1. Clone the Repository
 
-Clone the repository to your local machine (See below for deployment on Google Colab). 
+Clone the repository to your local machine (See below for deployment on Google Colab or Lightning AI Studio). 
 This command checks out the `main` branch and places it into a clean `gpt2-classifier` directory:
 
 ```bash
