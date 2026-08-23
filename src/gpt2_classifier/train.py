@@ -15,7 +15,7 @@ import torch
 from gpt2_classifier import paths
 from gpt2_classifier.evaluate import calc_classification_metrics_loader, calc_loss_batch, evaluate_model
 from gpt2_classifier.logging_utils import RunLogger
-from gpt2_classifier.model import GPTModel
+from gpt2_classifier.model import GPTModel, LinearWithLoRA
 from gpt2_classifier.utils import get_device
 
 TrainingHistory = tuple[
@@ -163,11 +163,46 @@ def _prepare_for_classification_finetuning(
     torch.manual_seed(123)
     model.out_head = torch.nn.Linear(in_features=model_config["emb_dim"], out_features=num_classes)
     model.to(device)
-
+    
     for param in model.trf_blocks[-1].parameters():
         param.requires_grad = True
     for param in model.final_norm.parameters():
         param.requires_grad = True
+
+
+def replace_linear_with_lora(model, rank, alpha):
+    for name, module in model.named_children():
+        if isinstance(module, torch.nn.Linear):
+            setattr(model, name, LinearWithLoRA(module, rank, alpha))
+        else:
+            replace_linear_with_lora(module, rank, alpha)
+
+
+def _prepare_for_classification_finetuning_with_lora(
+    model: GPTModel,
+    model_config: dict[str, Any],
+    num_classes: int,
+    device: torch.device,
+    lora_rank: int=16,
+    lora_alpha: int=16
+) -> None:
+    """Freeze the backbone, swap in a classification head, and unfreeze the top layers.
+
+    Args:
+        model: A language-model-headed :class:`GPTModel`.
+        model_config: The model's config dict (needs ``emb_dim``).
+        num_classes: Number of output classes for the new head.
+        device: Device to move the model to.
+    """
+
+    torch.manual_seed(123)
+    model.out_head = torch.nn.Linear(in_features=model_config["emb_dim"], out_features=num_classes)
+    
+    for param in model.parameters():
+        param.requires_grad = False
+
+    replace_linear_with_lora(model, lora_rank, lora_alpha)
+    model.to(device)
 
 
 def get_adam_param_groups(model: GPTModel, weight_decay: float = 0.1):
@@ -205,6 +240,7 @@ def finetune_model(
     lr: float = 5e-5,
     weight_decay: float = 0.1,
     optimize_adamw: bool = True,
+    lora_enabled: bool = False,
     num_epochs: int = 5,
     eval_freq: int = 50,
     eval_iter: int = 5,
@@ -226,6 +262,7 @@ def finetune_model(
         lr: Learning rate for AdamW.
         weight_decay: Weight decay for AdamW.
         optimize_adamw: Exclude weight decay from 1D tensors
+        lora_enabled: upgrade finetining with LoRA
         num_epochs: Number of epochs to train for.
         eval_freq: Evaluate loss every this many training steps.
         eval_iter: Number of batches to sample per evaluation.
@@ -253,7 +290,11 @@ def finetune_model(
         training.
     """
     device = get_device()
-    _prepare_for_classification_finetuning(model, model_config, num_classes, device)
+
+    if lora_enabled:
+        _prepare_for_classification_finetuning_with_lora(model, model_config, num_classes, device)
+    else:
+        _prepare_for_classification_finetuning(model, model_config, num_classes, device)
 
     torch.manual_seed(123)
     if optimize_adamw:
