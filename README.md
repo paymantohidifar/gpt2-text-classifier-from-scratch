@@ -188,6 +188,8 @@ Below are key CLI commands and flags. To view detailed option descriptions and d
 | `--num-epochs` | Number of fine-tuning epochs (default `5`). |
 | `--use-wandb` | Enable Weights & Biases experiment tracking. |
 | `--ddp` | Multi-GPU training via `torchrun`. |
+| `--lora-enabled` | Fine-tune via frozen-backbone LoRA adapters instead of unfreezing the last transformer block (see [LoRA fine-tuning](#lora-fine-tuning) below). |
+| `--lora-rank` / `--lora-alpha` | Rank and scaling factor for the LoRA decomposition (only used with `--lora-enabled`, default `16`/`16`). |
 
 ## Examples
 
@@ -226,8 +228,35 @@ python -m gpt2_classifier train \
   --num-epochs 5
 ```
 
+## LoRA Fine-Tuning
+
+By default, `train` freezes the pretrained GPT-2 backbone and only unfreezes
+the last transformer block + final norm before training the classifier head.
+Passing `--lora-enabled` switches to
+[LoRA](https://arxiv.org/abs/2106.09685) (Low-Rank Adaptation) instead: the
+**entire** backbone stays frozen, and every linear layer in the model gets a
+small, trainable low-rank adapter (`--lora-rank`/`--lora-alpha` control its
+size) added alongside it. Only the LoRA adapters and the fresh classification
+head are trained, which means far fewer trainable parameters and lower
+memory/compute requirements -- useful on constrained hardware or when
+fine-tuning larger GPT-2 variants.
+
+```bash
+python -m gpt2_classifier train \
+  --model-name "gpt2-small (124M)" \
+  --dataset sms-spam \
+  --num-epochs 5 \
+  --lora-enabled \
+  --lora-rank 8 \
+  --lora-alpha 16
+```
+
+LoRA fine-tuning also works with `--ddp` for multi-GPU training, since the
+backbone freezing/adapter injection happens before the model is handed off
+to the distributed training loop.
+
 ## Real-Time Monitoring with Weights & Biases (WandB)
-1
+
 You can track training metrics, loss curves, and hardware utilization in real time by 
 passing the `--use-wandb` flag during training.
 
@@ -276,16 +305,26 @@ end-to-end walkthrough: prepare a balanced/imbalanced email-spam dataset, load p
 a classification head, and run inference. Also runnable directly on 
 [Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/02_email_spam_classification.ipynb).
 
+- [`03_email_spam_classification_with_lora.ipynb`](notebooks/03_email_spam_classification_with_lora.ipynb) — 
+reimplements the email-spam walkthrough with [LoRA](#lora-fine-tuning) fine-tuning: freeze the entire GPT-2 
+backbone, inject low-rank adapters into every linear layer, and fine-tune only the adapters and classification 
+head. Also runnable directly on 
+[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/03_email_spam_classification_with_lora.ipynb).
+
 
 ## Snapshots of Training & Model Metrics
 
-Loss/accuracy curves and final classifier metrics from a reference training run:
+Comparison of performance metrics between two classifiers on the email-spam dataset.
+The top plot is the classifier whose output head, final layer norm, and last transformer
+block are trained; the bottom plot is the classifier whose linear layers are all fine-tuned
+via LoRA adapters instead. As shown here, the LoRA variant's performance improves
+significantly.
 
-<img src="plots/sms-spam/metrics.png" alt="Training metrics" width="750">
+<img src="plots/email-spam/model_metrics.png" alt="model metrics without LoRA" width="500">
 
 <br>
 
-<img src="plots/sms-spam/model_metrics.png" alt="Model metrics" width="500">
+<img src="plots/email-spam/model_metrics_lora.png" alt="model metrics with LoRA" width="500">
 
 ## Contributing
 

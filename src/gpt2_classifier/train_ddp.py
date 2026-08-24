@@ -58,6 +58,14 @@ def train_classifier_ddp(
     ``DistributedSampler`` (this function calls
     ``train_loader.sampler.set_epoch(...)``).
 
+    Works transparently with LoRA-adapted models: parameter freezing and
+    LoRA-wrapping (see ``gpt2_classifier.train._prepare_for_classification_finetuning_with_lora``)
+    happen in :func:`gpt2_classifier.train.finetune_model` before dispatch,
+    so ``model`` may already have most parameters frozen by the time it
+    reaches this function -- ``DDP`` only synchronizes gradients for
+    parameters with ``requires_grad=True``, so frozen backbone weights are
+    unaffected.
+
     Args:
         rank: This process's GPU/rank id.
         world_size: Total number of DDP processes (expected to be launched

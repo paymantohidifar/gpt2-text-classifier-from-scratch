@@ -153,6 +153,9 @@ def _run_train(args: argparse.Namespace) -> None:
         lr=args.lr,
         weight_decay=args.weight_decay,
         optimize_adamw=args.optimize_adamw,
+        lora_enabled=args.lora_enabled,
+        lora_rank=args.lora_rank,
+        lora_alpha=args.lora_alpha,
         num_epochs=args.num_epochs,
         eval_freq=args.eval_freq,
         eval_iter=args.eval_iter,
@@ -214,6 +217,9 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--lr", type=float, default=5e-5)
     train_parser.add_argument("--weight-decay", type=float, default=0.1)
     train_parser.add_argument("--optimize-adamw", action="store_true", default=True, help="Excludes weight decay on 1D tensors (e.g. LayerNorm/biases)")
+    train_parser.add_argument("--lora-enabled", action="store_true", default=False, help="Fine-tune via frozen-backbone LoRA adapters instead of unfreezing the last transformer block")
+    train_parser.add_argument("--lora-rank", type=int, default=16, help="Rank of the LoRA decomposition (only used with --lora-enabled)")
+    train_parser.add_argument("--lora-alpha", type=int, default=16, help="Scaling factor for the LoRA update (only used with --lora-enabled)")
     train_parser.add_argument("--eval-freq", type=int, default=50)
     train_parser.add_argument("--eval-iter", type=int, default=5)
     train_parser.add_argument("--use-wandb", action="store_true", default=False)

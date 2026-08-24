@@ -5,6 +5,8 @@ pretrained GPT-2 weights can be loaded into it via
 :mod:`gpt2_classifier.weights`.
 """
 
+import math
+
 import torch
 from torch import nn
 
@@ -257,3 +259,74 @@ class GPTModel(nn.Module):
         x = self.final_norm(x)
         logits = self.out_head(x)
         return logits
+
+
+class LoRALayer(nn.Module):
+    """Low-rank adaptation (LoRA) update: a frozen-rank ``A @ B`` decomposition.
+
+    Adds a trainable low-rank delta ``(alpha / rank) * (x @ A @ B)`` on top of
+    a frozen base layer's output, per Hu et al. (2021), "LoRA: Low-Rank
+    Adaptation of Large Language Models".
+    """
+
+    def __init__(self, in_dim: int, out_dim: int, rank: int, alpha: float) -> None:
+        """Initialize the low-rank ``A``/``B`` factors.
+
+        Args:
+            in_dim: Input feature dimension of the wrapped layer.
+            out_dim: Output feature dimension of the wrapped layer.
+            rank: Rank of the low-rank decomposition.
+            alpha: Scaling factor for the low-rank update.
+        """
+        super().__init__()
+        self.A = nn.Parameter(torch.empty(in_dim, rank))
+        nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))
+        self.B = nn.Parameter(torch.zeros(rank, out_dim))
+        self.rank = rank
+        self.alpha = alpha
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Compute the low-rank update for ``x``.
+
+        Args:
+            x: Input tensor of shape ``(..., in_dim)``.
+
+        Returns:
+            Tensor of shape ``(..., out_dim)``.
+        """
+        return (self.alpha / self.rank) * (x @ self.A @ self.B)
+
+
+class LinearWithLoRA(nn.Module):
+    """Wraps an ``nn.Linear`` with a parallel, additive :class:`LoRALayer`.
+
+    The wrapped ``linear`` is expected to be frozen (``requires_grad=False``)
+    by the caller; only the LoRA ``A``/``B`` factors are meant to be trained.
+    """
+
+    def __init__(self, linear: nn.Linear, rank: int, alpha: float) -> None:
+        """Initialize the wrapper around an existing linear layer.
+
+        Args:
+            linear: The base ``nn.Linear`` layer to adapt.
+            rank: Rank of the LoRA decomposition.
+            alpha: Scaling factor for the LoRA update.
+        """
+        super().__init__()
+        self.linear = linear
+        self.lora = LoRALayer(
+            linear.in_features, linear.out_features, rank, alpha
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply the base linear layer plus the LoRA update.
+
+        Args:
+            x: Input tensor of shape ``(..., in_features)``.
+
+        Returns:
+            Tensor of shape ``(..., out_features)``.
+        """
+        return self.linear(x) + self.lora(x)
+
+

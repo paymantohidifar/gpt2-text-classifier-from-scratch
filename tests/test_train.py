@@ -2,8 +2,13 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 from gpt2_classifier import paths
-from gpt2_classifier.model import GPTModel
-from gpt2_classifier.train import _prepare_for_classification_finetuning, finetune_model
+from gpt2_classifier.model import GPTModel, LinearWithLoRA
+from gpt2_classifier.train import (
+    _prepare_for_classification_finetuning,
+    _prepare_for_classification_finetuning_with_lora,
+    finetune_model,
+    replace_linear_with_lora,
+)
 from gpt2_classifier.utils import get_device
 
 
@@ -100,3 +105,79 @@ def test_finetune_model_skips_checkpoint_when_path_is_none(tiny_gpt_config):
         checkpoint_name=None,
     )
     # No assertion needed beyond "did not raise" -- confirms the None path is safe.
+
+
+def _bare_linear_children(module):
+    """Direct nn.Linear children not wrapped in LinearWithLoRA, recursing
+    into everything except a LinearWithLoRA's own (intentionally bare) base
+    linear layer."""
+    bare = []
+    for child in module.children():
+        if isinstance(child, LinearWithLoRA):
+            continue
+        if isinstance(child, torch.nn.Linear):
+            bare.append(child)
+        else:
+            bare.extend(_bare_linear_children(child))
+    return bare
+
+
+def test_replace_linear_with_lora_wraps_all_nested_linears(tiny_gpt_config):
+    model = GPTModel(tiny_gpt_config)
+
+    replace_linear_with_lora(model, rank=2, alpha=4)
+
+    assert _bare_linear_children(model) == []
+    lora_wrapped = [m for m in model.modules() if isinstance(m, LinearWithLoRA)]
+    assert len(lora_wrapped) > 0
+
+
+def test_prepare_for_classification_finetuning_with_lora_freezes_backbone_and_trains_head_and_lora(
+    tiny_gpt_config,
+):
+    model = GPTModel(tiny_gpt_config)
+    device = torch.device("cpu")
+
+    _prepare_for_classification_finetuning_with_lora(
+        model, tiny_gpt_config, num_classes=2, device=device, lora_rank=2, lora_alpha=4
+    )
+
+    assert isinstance(model.out_head, torch.nn.Linear)
+    assert not isinstance(model.out_head, LinearWithLoRA)
+    assert model.out_head.out_features == 2
+    assert all(p.requires_grad for p in model.out_head.parameters())
+
+    for module in model.modules():
+        if isinstance(module, LinearWithLoRA):
+            assert not module.linear.weight.requires_grad
+            assert module.lora.A.requires_grad
+            assert module.lora.B.requires_grad
+
+    assert all(not p.requires_grad for p in model.tok_emb.parameters())
+    assert all(not p.requires_grad for p in model.pos_emb.parameters())
+
+
+def test_finetune_model_with_lora_runs_and_saves_checkpoint(tiny_gpt_config, tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, "MODELS_DIR", tmp_path)
+    model = GPTModel(tiny_gpt_config)
+    train_loader = _tiny_loader(tiny_gpt_config["vocab_size"])
+    val_loader = _tiny_loader(tiny_gpt_config["vocab_size"])
+    checkpoint_name = "lora_classifier.pt"
+    checkpoint_path = tmp_path / checkpoint_name
+
+    finetune_model(
+        train_loader,
+        val_loader,
+        model,
+        tiny_gpt_config,
+        num_classes=2,
+        lora_enabled=True,
+        lora_rank=2,
+        lora_alpha=4,
+        num_epochs=1,
+        eval_freq=1,
+        eval_iter=1,
+        checkpoint_name=checkpoint_name,
+    )
+
+    assert checkpoint_path.exists()
