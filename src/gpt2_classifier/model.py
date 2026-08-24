@@ -5,9 +5,10 @@ pretrained GPT-2 weights can be loaded into it via
 :mod:`gpt2_classifier.weights`.
 """
 
+import math
+
 import torch
 from torch import nn
-import math
 
 from gpt2_classifier.config import GPTConfig
 
