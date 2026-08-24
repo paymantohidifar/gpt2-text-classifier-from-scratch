@@ -170,7 +170,19 @@ def _prepare_for_classification_finetuning(
         param.requires_grad = True
 
 
-def replace_linear_with_lora(model, rank, alpha):
+def replace_linear_with_lora(model: torch.nn.Module, rank: int, alpha: float) -> None:
+    """Recursively replace every ``nn.Linear`` submodule with a :class:`LinearWithLoRA` wrapper.
+
+    Mutates ``model`` in place: each ``nn.Linear`` child is swapped for a
+    :class:`LinearWithLoRA` wrapping the original layer, so pretrained
+    weights are preserved and only the new LoRA factors are added.
+
+    Args:
+        model: Module tree to walk. Every ``nn.Linear`` found anywhere in the
+            tree (including nested submodules) is replaced.
+        rank: Rank of the LoRA decomposition applied to each replaced layer.
+        alpha: Scaling factor for each replaced layer's LoRA update.
+    """
     for name, module in model.named_children():
         if isinstance(module, torch.nn.Linear):
             setattr(model, name, LinearWithLoRA(module, rank, alpha))
@@ -183,25 +195,33 @@ def _prepare_for_classification_finetuning_with_lora(
     model_config: dict[str, Any],
     num_classes: int,
     device: torch.device,
-    lora_rank: int=16,
-    lora_alpha: int=16
+    lora_rank: int = 16,
+    lora_alpha: int = 16,
 ) -> None:
-    """Freeze the backbone, swap in a classification head, and unfreeze the top layers.
+    """Freeze the backbone, adapt its linear layers with LoRA, and swap in a fresh classification head.
+
+    Unlike :func:`_prepare_for_classification_finetuning`, the backbone stays
+    fully frozen -- adaptation happens via small trainable LoRA factors
+    injected into every ``nn.Linear`` (see :func:`replace_linear_with_lora`)
+    instead of unfreezing the last transformer block. The classification head
+    is created *after* freezing/LoRA-wrapping so it is a plain, fully
+    trainable ``nn.Linear`` (not LoRA-wrapped).
 
     Args:
         model: A language-model-headed :class:`GPTModel`.
         model_config: The model's config dict (needs ``emb_dim``).
         num_classes: Number of output classes for the new head.
         device: Device to move the model to.
+        lora_rank: Rank of the LoRA decomposition.
+        lora_alpha: Scaling factor for the LoRA update.
     """
-
-    torch.manual_seed(123)
-    model.out_head = torch.nn.Linear(in_features=model_config["emb_dim"], out_features=num_classes)
-    
     for param in model.parameters():
         param.requires_grad = False
 
     replace_linear_with_lora(model, lora_rank, lora_alpha)
+
+    torch.manual_seed(123)
+    model.out_head = torch.nn.Linear(in_features=model_config["emb_dim"], out_features=num_classes)
     model.to(device)
 
 
@@ -241,6 +261,8 @@ def finetune_model(
     weight_decay: float = 0.1,
     optimize_adamw: bool = True,
     lora_enabled: bool = False,
+    lora_rank: int = 16,
+    lora_alpha: int = 16,
     num_epochs: int = 5,
     eval_freq: int = 50,
     eval_iter: int = 5,
@@ -262,7 +284,13 @@ def finetune_model(
         lr: Learning rate for AdamW.
         weight_decay: Weight decay for AdamW.
         optimize_adamw: Exclude weight decay from 1D tensors
-        lora_enabled: upgrade finetining with LoRA
+        lora_enabled: If ``True``, freeze the backbone and fine-tune via
+            LoRA adapters (see :func:`_prepare_for_classification_finetuning_with_lora`)
+            instead of unfreezing the last transformer block.
+        lora_rank: Rank of the LoRA decomposition (only used when
+            ``lora_enabled=True``).
+        lora_alpha: Scaling factor for the LoRA update (only used when
+            ``lora_enabled=True``).
         num_epochs: Number of epochs to train for.
         eval_freq: Evaluate loss every this many training steps.
         eval_iter: Number of batches to sample per evaluation.
@@ -292,7 +320,9 @@ def finetune_model(
     device = get_device()
 
     if lora_enabled:
-        _prepare_for_classification_finetuning_with_lora(model, model_config, num_classes, device)
+        _prepare_for_classification_finetuning_with_lora(
+            model, model_config, num_classes, device, lora_rank=lora_rank, lora_alpha=lora_alpha
+        )
     else:
         _prepare_for_classification_finetuning(model, model_config, num_classes, device)
 
