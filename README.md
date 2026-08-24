@@ -326,7 +326,6 @@ significantly.
 
 <img src="plots/email-spam/model_metrics_lora.png" alt="model metrics with LoRA" width="500">
 
-
 ## Contributing
 
 This platform is developed to help practitioners and students iteratively build, fine-tune, and 
