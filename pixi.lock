@@ -1399,7 +1399,7 @@ packages:
 - pypi: ./
   name: gpt2-classifier
   version: 0.1.0
-  sha256: b61d1ddf5903e36d6bdf208ceded6f3f0cd27bdb6892f15384100e8e12084ee9
+  sha256: 18bb39dabaa4aec1ac222e87e1dc3fe33df57e7e9dc351cb92536b529933abc1
   requires_dist:
   - numpy>=2.2.0
   - pandas>=2.2.0
@@ -1417,7 +1417,7 @@ packages:
   - torch==2.6.0 ; extra == 'cpu'
   - torch==2.6.0 ; extra == 'gpu'
   - pytest>=8.0 ; extra == 'dev'
-  - ruff>=0.6 ; extra == 'dev'
+  - ruff==0.16.0 ; extra == 'dev'
   requires_python: ==3.11.*
 - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
   name: h11

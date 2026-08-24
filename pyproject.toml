@@ -34,7 +34,7 @@ dependencies = [
 [project.optional-dependencies]
 cpu = ["torch==2.6.0"]
 gpu = ["torch==2.6.0"]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["pytest>=8.0", "ruff==0.16.0"]
 
 # Local packages to include in the wheel distribution
 [tool.hatch.build.targets.wheel]
@@ -87,7 +87,7 @@ torch = { version = "==2.6.0", index = "https://download.pytorch.org/whl/cu124" 
 
 [tool.pixi.feature.dev.pypi-dependencies]
 pytest = ">=8.0"
-ruff = ">=0.6"
+ruff = "==0.16.0"
 
 [tool.pixi.environments]
 default = ["cpu", "dev"] # Standard local install defaults to clean CPU + Dev
