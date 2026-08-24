@@ -44,6 +44,24 @@ def test_train_subcommand_parses_expected_args():
     assert args.func.__name__ == "_run_train"
 
 
+def test_train_subcommand_lora_flags_default_off():
+    parser = build_parser()
+    args = parser.parse_args(["train"])
+    assert args.lora_enabled is False
+    assert args.lora_rank == 16
+    assert args.lora_alpha == 16
+
+
+def test_train_subcommand_parses_lora_flags():
+    parser = build_parser()
+    args = parser.parse_args(
+        ["train", "--lora-enabled", "--lora-rank", "8", "--lora-alpha", "32"]
+    )
+    assert args.lora_enabled is True
+    assert args.lora_rank == 8
+    assert args.lora_alpha == 32
+
+
 def test_predict_subcommand_requires_checkpoint_and_text():
     parser = build_parser()
     args = parser.parse_args(["predict", "--checkpoint", "models/x.pt", "--text", "hello"])
