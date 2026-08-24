@@ -256,7 +256,7 @@ backbone freezing/adapter injection happens before the model is handed off
 to the distributed training loop.
 
 ## Real-Time Monitoring with Weights & Biases (WandB)
-1
+
 You can track training metrics, loss curves, and hardware utilization in real time by 
 passing the `--use-wandb` flag during training.
 
@@ -304,6 +304,12 @@ a classification head, and run inference. Also runnable directly on
 end-to-end walkthrough: prepare a balanced/imbalanced email-spam dataset, load pretrained GPT-2 weights, finetune 
 a classification head, and run inference. Also runnable directly on 
 [Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/02_email_spam_classification.ipynb).
+
+- [`03_email_spam_classification_with_lora.ipynb`](notebooks/03_email_spam_classification_with_lora.ipynb) — 
+reimplements the email-spam walkthrough with [LoRA](#lora-fine-tuning) fine-tuning: freeze the entire GPT-2 
+backbone, inject low-rank adapters into every linear layer, and fine-tune only the adapters and classification 
+head. Also runnable directly on 
+[Google Colab](https://colab.research.google.com/github/paymantohidifar/gpt2-text-classifier-from-scratch/blob/main/notebooks/03_email_spam_classification_with_lora.ipynb).
 
 
 ## Snapshots of Training & Model Metrics
