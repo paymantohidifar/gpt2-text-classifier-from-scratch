@@ -314,13 +314,18 @@ head. Also runnable directly on
 
 ## Snapshots of Training & Model Metrics
 
-Loss/accuracy curves and final classifier metrics from a reference training run:
+Comparison of performance metrics between two classifiers on the email-spam dataset.
+The top plot is the classifier whose output head, final layer norm, and last transformer
+block are trained; the bottom plot is the classifier whose linear layers are all fine-tuned
+via LoRA adapters instead. As shown here, the LoRA variant's performance improves
+significantly.
 
-<img src="plots/training/metrics.png" alt="Training metrics" width="750">
+<img src="plots/email-spam/model_metrics.png" alt="model metrics without LoRA" width="500">
 
 <br>
 
-<img src="plots/training/model_metrics.png" alt="Model metrics" width="500">
+<img src="plots/email-spam/model_metrics_lora.png" alt="model metrics with LoRA" width="500">
+
 
 ## Contributing
 
