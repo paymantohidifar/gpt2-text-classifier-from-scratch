@@ -188,6 +188,8 @@ Below are key CLI commands and flags. To view detailed option descriptions and d
 | `--num-epochs` | Number of fine-tuning epochs (default `5`). |
 | `--use-wandb` | Enable Weights & Biases experiment tracking. |
 | `--ddp` | Multi-GPU training via `torchrun`. |
+| `--lora-enabled` | Fine-tune via frozen-backbone LoRA adapters instead of unfreezing the last transformer block (see [LoRA fine-tuning](#lora-fine-tuning) below). |
+| `--lora-rank` / `--lora-alpha` | Rank and scaling factor for the LoRA decomposition (only used with `--lora-enabled`, default `16`/`16`). |
 
 ## Examples
 
@@ -225,6 +227,33 @@ python -m gpt2_classifier train \
   --label-map "negative=0,positive=1" \
   --num-epochs 5
 ```
+
+## LoRA Fine-Tuning
+
+By default, `train` freezes the pretrained GPT-2 backbone and only unfreezes
+the last transformer block + final norm before training the classifier head.
+Passing `--lora-enabled` switches to
+[LoRA](https://arxiv.org/abs/2106.09685) (Low-Rank Adaptation) instead: the
+**entire** backbone stays frozen, and every linear layer in the model gets a
+small, trainable low-rank adapter (`--lora-rank`/`--lora-alpha` control its
+size) added alongside it. Only the LoRA adapters and the fresh classification
+head are trained, which means far fewer trainable parameters and lower
+memory/compute requirements -- useful on constrained hardware or when
+fine-tuning larger GPT-2 variants.
+
+```bash
+python -m gpt2_classifier train \
+  --model-name "gpt2-small (124M)" \
+  --dataset sms-spam \
+  --num-epochs 5 \
+  --lora-enabled \
+  --lora-rank 8 \
+  --lora-alpha 16
+```
+
+LoRA fine-tuning also works with `--ddp` for multi-GPU training, since the
+backbone freezing/adapter injection happens before the model is handed off
+to the distributed training loop.
 
 ## Real-Time Monitoring with Weights & Biases (WandB)
 1
